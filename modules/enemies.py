@@ -1,0 +1,293 @@
+import pandas as pd
+from discord import Embed as emb
+import math
+from collections import defaultdict
+import sqlite3
+
+from discord.ext.commands import BadArgument
+
+from modules import aliases
+
+_enemies = pd.read_csv('databases/enemyunits.tsv', sep='\t')
+
+def namefromcode(enemycode):
+	returnthis = _enemies.iloc[enemycode]
+	returnthis = returnthis.iat[-2]
+	return returnthis
+
+def getrow(row):
+	if row < 0:
+		return None
+	try:
+		returned = _enemies.iloc[row]
+	except IndexError:
+		returned = None
+	return returned
+
+def closeEnough(strToCmp, errors):
+	strToCmp = strToCmp.lower()
+	names = _enemies.loc[:, 'en names'].to_list()
+	names = [str(x).lower() for x in names]
+	# edit distance of everything in the tsv
+	dss = list(map(lambda x: edit_distance_fast(x, strToCmp, errors), names))
+	
+	closest = [i for i, x in enumerate(dss) if x == min(dss)]
+	
+	# from dictionary
+	distancedict = defaultdict(list)
+	for i in aliases.get_all_names("enemies"):
+		distancedict[edit_distance_fast(strToCmp, i[1].lower(), errors)].append(i[0])
+	customnames = []
+	try:
+		customnames = min(distancedict.items())
+	except ValueError:  # empty custom names
+		customnames.append(errors + 1)
+	if min(dss) > errors and customnames[0] > errors:  # both were too bad
+		return None
+	if min(dss) < customnames[0]:  # normal names were better
+		return [closest, min(dss)]  # all of the closest and the distance of the closests
+	else:  # custom names were better
+		return [customnames[1], customnames[0]]  # the best matches of all custom names
+
+def enemytraitstopic(enemy):  # for each trait, add '1' to the string if it has the trait, '0' otherwise
+	trait_ids = [10, 13, 14, 15, 16, 17, 19, 72, 93]
+	fstr = ['1' if enemy[x] != 0 else '0' for x in trait_ids]
+	if enemy[69] != 0:
+		fstr[6] = '2'
+	if enemy[48] > 0:  # witch trait
+		fstr = "witchtrait"
+	if enemy[71] > 0:  # is eva
+		fstr = "evatrait"
+	return 'https://raw.githubusercontent.com/ElMustacho/catbot-v1.1/master/new_pics/' + ''.join(fstr) + '.png'
+
+def getUnitCode(identifier: str, errors=6):
+	if identifier.isnumeric():
+		locator = [int(identifier), 0]
+	else:
+		locator = closeEnough(identifier, errors)
+		if locator is None:
+			raise BadArgument(f"Enemy '{identifier}' could not be found")
+		if len(locator[0]) > 1:
+			raise BadArgument(f"Enemy '{identifier}' is not unique")
+		locator[0] = locator[0][0]
+	return locator
+
+def getstatsembed(enemy, magnification, mag2=None):
+	backswing = int(enemy[-3]) - max(enemy[12], enemy[57], enemy[58])
+	real_tba = max(enemy[12], enemy[57], enemy[58]) + max(backswing, enemy[4] * 2 - 1)
+	if mag2 is None:
+		mag2 = magnification
+	title = 'Stats of ' + str(enemy[-2])
+	enemyEmbed = emb(description=title, color=0x00ff00)
+	enemyEmbed.set_author(name='Cat Bot')
+	magstring = str(magnification) + '%'
+	if mag2 != magnification:
+		magstring = magstring + ' HP, ' + str(mag2 * 100) + '% Damage'
+	enemyEmbed.add_field(name='Magnification', value=magstring, inline=True)
+	hpv = str(math.ceil(int(enemy[0]) * magnification / 100)) + ' HP - ' + str(enemy[1]) + ' KB'
+	if enemy[52] == 2:
+		hpv += ' (suicides on hit)'
+	enemyEmbed.add_field(name='HP - Knockbacks', value=hpv, inline=True)
+	dmg = str(math.ceil(int(enemy[3]) * mag2 / 100))
+	if int(enemy[55]) > 0:
+		dmg += '/' + str(math.ceil(int(enemy[55]) * mag2 / 100))
+	if int(enemy[56]) > 0:
+		dmg += '/' + str(math.ceil(int(enemy[56]) * mag2 / 100))
+	dps = ' Damage - ' + str(math.ceil(((enemy[3] + enemy[55] + enemy[56]) * mag2 * 30 / (real_tba * 100)))) + ' DPS'
+	damagekind = ''
+	if enemy[11] == 1:
+		damagekind += 'area'
+	else:
+		damagekind += 'single'
+	if enemy[35] > 0:
+		if enemy[36] > 0:
+			damagekind += ', long range'
+		elif enemy[36] < 0:
+			damagekind += ', omnistrike'
+	if enemy[95] > 0 or enemy[98] > 0:  # multiarea attack
+		damagekind += ', multiarea'
+	damagetype = 'Damage (' + damagekind + ') - DPS'
+	enemyEmbed.add_field(name=damagetype, value=dmg + dps, inline=True)
+	tba = str(round(int(real_tba) / 30, 2))
+	enemyEmbed.add_field(name='Speed - Attack Frequency', value=str(round(int(enemy[2]), 0)) + ' - ' + tba + 's',
+											 inline=True)
+	enemyEmbed.add_field(name='Cash Awarded', value=str(round(int(enemy[6] * 3.95), 0)), inline=True)
+	rangestr = ''
+	if ',' in damagekind:  # it's long range or omni or multi
+		if enemy[95] > 0 and enemy[98] == 0:  # multiarea 1, gods this stuff is a mess
+			second_range_begin = str(int(enemy[96]))
+			second_range_end = str(int(enemy[96] + enemy[97]))
+			
+			leftrange = str(min(round(int(enemy[35]), 0), round(int(enemy[35] + enemy[36]))))
+			rightrange = str(max(round(int(enemy[35]), 0), round(int(enemy[35] + enemy[36]))))
+			rangestr += leftrange + ' to ' + rightrange + ' | ' + second_range_begin + ' to ' + second_range_end + '; stands at ' + str(
+				round(int(enemy[5])))
+		
+		elif enemy[95] > 0 and enemy[98] > 0:  # multiarea 2
+			second_range_begin = str(int(enemy[96]))
+			second_range_end = str(int(enemy[96] + enemy[97]))
+			
+			third_range_begin = str(int(enemy[99]))
+			third_range_end = str(int(enemy[99] + enemy[100]))
+			
+			leftrange = str(min(round(int(enemy[35]), 0), round(int(enemy[35] + enemy[36]))))
+			rightrange = str(max(round(int(enemy[35]), 0), round(int(enemy[35] + enemy[36]))))
+			rangestr += leftrange + ' to ' + rightrange + ' | ' + second_range_begin + ' to ' + second_range_end + ' | ' + third_range_begin + ' to ' + third_range_end + '; stands at ' + str(
+				round(int(enemy[5])))
+		
+		else:
+			leftrange = str(max(round(int(enemy[35]), 0), round(int(enemy[35] + enemy[36]))))
+			rightrange = str(min(round(int(enemy[35]), 0), round(int(enemy[35] + enemy[36]))))
+			rangestr += leftrange + ' to ' + rightrange + '; stands at ' + str(round(int(enemy[5])))
+	else:  # otherwise only range is needed
+		rangestr += str(round(int(enemy[5])))
+	enemyEmbed.add_field(name='Range', value=rangestr, inline=True)
+	enemyEmbed.set_thumbnail(url=enemytraitstopic(enemy))
+	offensive = ''
+	if enemy[20] > 0:  # knockback
+		offensive += 'Knockback ' + str(round(int(enemy[20]))) + '%, '
+	if enemy[21] > 0:  # freezes
+		offensive += 'Freeze ' + str(round(int(enemy[21]))) + '% (' + str(round(int(enemy[22]) / 30, 2)) + 's), '
+	if enemy[23] > 0:  # slow
+		offensive += 'Slow ' + str(round(int(enemy[23]))) + '% (' + str(round(int(enemy[24]) / 30, 2)) + 's), '
+	if enemy[25] > 0:  # crits
+		offensive += 'Critical ' + str(round(int(enemy[25]))) + '%, '
+	if enemy[26] > 0:  # base destroyer
+		offensive += 'Base Destroyer, '
+	if enemy[27] > 0:  # wave attack
+		typewave = "Wave attack "
+		if enemy[86] > 0:  # it's a small wave
+			typewave = "Mini-Wave "
+		offensive += typewave + str(round(int(enemy[27]))) + '% (' + str(
+			467 + round(int(enemy[28]) - 1) * 200) + ' range, level ' + str(enemy[28]) + '), '
+	if enemy[29] > 0:  # weaken
+		offensive += 'Weaken ' + str(round(int(enemy[29]))) + '% (' + str(round(int(enemy[31]))) + '% power, ' + str(
+			round(int(enemy[30]) / 30, 2)) + 's), '
+	if enemy[32] > 0:  # strengthen
+		offensive += 'Strengthen ' + str(round(int(enemy[33]))) + '% (at ' + str(round(int(enemy[32]))) + '% hp), '
+	if enemy[43] != 0:  # burrow
+		if enemy[43] == 1:
+			offensive += 'Burrows once'
+		elif enemy[43] > 1:
+			offensive += 'Burrows ' + str(enemy[43]) + ' times'
+		else:
+			offensive += 'Burrows infinite times'
+		offensive += ' (for ' + str(int(enemy[44] / 4)) + ' range), '
+	if enemy[65] > 0:  # warp
+		warp1 = str(round(int(enemy[65])))
+		warp2 = str(round(int(enemy[67] / 4)))
+		warp3 = str(round(int(enemy[68] / 4)))
+		warp4 = str(round(float(enemy[66] / 30), 2))
+		offensive += 'Warp ' + warp1 + '% (' + warp2 + ' / ' + warp3 + ' range, ' + warp4 + 's), '
+	if enemy[73] > 0:  # curses
+		offensive += 'Curses ' + str(round(int(enemy[73]))) + '% (' + str(round(int(enemy[74]) / 30, 2)) + 's), '
+	if enemy[75] > 0:  # savage blows
+		offensive += 'Savage Blow ' + str(round(int(enemy[75]))) + '% (' + str(round(int(enemy[76]))) + \
+								 '% extra power), '
+	if enemy[79] > 0:  # poison
+		offensive += 'Poisons ' + str(round(int(enemy[79]))) + '% (' + str(int(enemy[80])) + '% hp), '
+	if enemy[81] > 0:  # surge attack
+		offensive += 'Surge Attack ' + str(round(int(enemy[81]))) + '% (' + str(
+			round(int(enemy[82] / 4))) + '-' + str(
+			round(int(enemy[82] / 4) + int(enemy[83] / 4))) + ', level ' + str(round(int(enemy[84]))) + '), '
+	if enemy[89] > 0:  # surge death attack
+		offensive += 'Surge Death Attack ' + str(round(int(enemy[89]))) + '% (' + str(
+			round(int(enemy[90] / 4))) + '-' + str(
+			round(int(enemy[90] / 4) + int(enemy[91] / 4))) + ', level ' + str(round(int(enemy[92]))) + '), '
+	offensive = offensive[:-2]
+	if len(offensive) > 3:
+		enemyEmbed.add_field(name='Offensive abilities', value=offensive, inline=True)
+	defensive = ''
+	if enemy[34] > 0:  # survive
+		defensive += 'Survive ' + str(enemy[34]) + '%, '
+	if enemy[37] > 0:  # wave immune
+		defensive += 'Wave immune, '
+	if enemy[39] > 0:  # knockback immune
+		defensive += 'Knockback immune, '
+	if enemy[40] > 0:  # freeze immune
+		defensive += 'Freeze immune, '
+	if enemy[41] > 0:  # slow immune
+		defensive += 'Slow immune, '
+	if enemy[42] > 0:  # weaken immune
+		defensive += 'Weaken immune, '
+	if enemy[45] != 0:  # resurrects
+		if enemy[45] == 1:
+			defensive += 'Revives once'
+		elif enemy[45] > 1:
+			defensive += 'Revives ' + str(enemy[45]) + ' times'
+		else:
+			defensive += 'Revives until z-killed'
+		defensive += ' (in ' + str(round(enemy[46] / 30, 2)) + 's, at ' + str(enemy[47]) + '% hp), '
+	if enemy[49] > 0:  # it's a base
+		defensive += "It's a base, "
+	if enemy[64] > 0:  # has a barrier
+		defensive += 'Has a ' + str(int(enemy[64])) + 'hp barrier, '
+	if enemy[85] > 0:  # surge immunity
+		defensive += "Surge immune, "
+	if enemy[70] > 0:  # resists warp (never used)
+		defensive += 'Immune to warp, '
+	if enemy[77] > 0:  # dodge
+		defensive += 'Dodge ' + str(round(int(enemy[77]))) + '% (' + str(round(int(enemy[78]) / 30, 2)) + 's), '
+	if int(enemy[87]) > 0:  # shield
+		defensive += 'Shield ' + str(int(enemy[87] * magnification / 100)) + ', resets at ' + str(enemy[88]) + '%, '
+	defensive = defensive[:-2]
+	if len(defensive) > 3:
+		enemyEmbed.add_field(name='Defensive abilities', value=defensive, inline=True)
+	if int(enemy[59]) > 0:
+		atkroutine = '__**' + str(round(int(enemy[12]))) + '**__'
+	else:
+		atkroutine = str(round(int(enemy[12])))
+	if int(enemy[57]) > 0:
+		if int(enemy[60]) > 0:
+			atkroutine += 'f / __**' + str(round(int(enemy[57]))) + '**__'
+		else:
+			atkroutine += 'f / ' + str(round(int(enemy[57])))
+	if int(enemy[58]) > 0:
+		if int(enemy[61]) > 0:
+			atkroutine += 'f / __**' + str(round(int(enemy[58]))) + '**__'
+		else:
+			atkroutine += 'f / ' + str(round(int(enemy[58])))
+	atkroutine += 'f / ' + str(int(backswing)) + 'f'
+	enemyEmbed.add_field(name='Attack timings', value=atkroutine, inline=True)
+	misc_txt = ''
+	if int(enemy[94]) > 0:  # is a baron
+		misc_txt += "It's a Colossal unit, "
+	if int(enemy[101]) > 0:  # is a wild enemy
+		misc_txt += "It's a Behemoth unit, "
+	misc_txt = misc_txt[:-2]
+	if len(misc_txt) > 3:  # is a baron
+		enemyEmbed.add_field(name='Miscellaneous', value=misc_txt, inline=True)
+	return enemyEmbed
+
+def edit_distance_fast(s1, s2, errors):
+	"""
+	Returns the edit distance between s1 and s2,
+	unless distance > errors, in which case it will
+	return some number greater than errors. Uses
+	Ukkonen's improvement on the Wagner-Fisher algorithm.
+
+	Credits to clam
+	"""
+	
+	# ensure that len(s1) <= len(s2)
+	
+	cur_row = []
+	len1, len2 = len(s1), len(s2)
+	if len(s1) > len(s2):
+		s1, s2 = s2, s1
+		len1, len2 = len2, len1
+	# distance is at least len2 - len1
+	if len2 - len1 > errors:
+		return errors + 1
+	prev_row = [*range(len2 + 1)]
+	for i, c1 in enumerate(s1):
+		cur_row = [i + 1, *([errors + 1] * len2)]
+		# only need to check the interval [i-errors,i+errors]
+		for j in range(max(0, i - errors), min(len2, i + errors + 1)):
+			cur_row[j + 1] = min(
+				prev_row[j + 1] + 1,  # skip char in s1
+				cur_row[j] + 1,  # skip char in s2
+				prev_row[j] + (c1 != s2[j])  # substitution
+			)
+		prev_row = cur_row
+	return cur_row[len2]
