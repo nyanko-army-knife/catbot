@@ -50,7 +50,7 @@ async def enemy(ctx, *args):
   if enem.extensions:
     embed.add_field(name="Extensions", value='\n'.join(str(x) for x in enem.extensions), inline=False)
   if enem.passives.immunities:
-    embed.add_field(name="Immunities", value=', '.join(str(x) for x in enem.passives.immunities), inline=False)
+    embed.add_field(name="Immunities", value='immune to ' ','.join(x.to for x in enem.passives.immunities), inline=False)
   if enem.passives.defensives:
     embed.add_field(name="Defensives", value='\n'.join(str(x) for x in enem.passives.defensives), inline=False)
   if enem.passives.offensives:
