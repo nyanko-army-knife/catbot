@@ -1,10 +1,9 @@
 import discord
-from discord import Embed
 
 from catbot.embeds.embed import Embeddable
 from catbot.embeds.entity import Entity
-from ..utils import emoji_by_name
 from commons import models
+from ..utils import emoji_by_name
 
 
 class Form(models.Form, Entity, Embeddable):
@@ -22,6 +21,7 @@ class Form(models.Form, Entity, Embeddable):
 		embed.add_field(name="Cooldown", value=f'{self.cooldown:,}f', inline=True)
 		super().embed_in(embed)
 		return embed
+
 
 class Cat(models.Cat):
 	form_base: Form = None

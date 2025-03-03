@@ -1,8 +1,7 @@
-from dataclasses import dataclass, fields, field
+from dataclasses import dataclass
 
 import discord
 
-from catbot.embeds import abilities
 from catbot.embeds.embed import Embeddable
 from commons import models
 from .abilities import Passives

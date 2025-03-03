@@ -1,11 +1,9 @@
-import dataclasses
-
 import discord
 
-from .entity import Entity
-from .embed import Embeddable
-from ..utils import emoji_by_name
 from commons.models import enemy
+from .embed import Embeddable
+from .entity import Entity
+from ..utils import emoji_by_name
 
 
 class Enemy(enemy.Enemy, Entity, Embeddable):

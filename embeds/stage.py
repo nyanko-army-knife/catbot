@@ -1,8 +1,9 @@
 import discord
 
-from commons import idx
-from catbot.embeds.embed import Embeddable
 import commons.models as models
+from catbot.embeds.embed import Embeddable
+from commons import idx
+
 
 class Stage(models.Stage, Embeddable):
 	def __init__(self, stage: models.Stage):

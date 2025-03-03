@@ -1,4 +1,3 @@
-from copy import deepcopy
 from dataclasses import dataclass
 from typing import override
 
@@ -10,6 +9,6 @@ from catbot.embeds.embed import Embeddable
 
 @dataclass
 class AttackBreakup(models.AttackBreakup, Embeddable):
-  @override
-  def embed_in(self, embed: discord.Embed) -> discord.Embed:
-    pass
+	@override
+	def embed_in(self, embed: discord.Embed) -> discord.Embed:
+		pass

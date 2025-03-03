@@ -1,8 +1,9 @@
 import discord
 from typing_extensions import override
 
-from ..embed import Embeddable
 import commons.models.abilities as abilities
+from ..embed import Embeddable
+
 
 class Passives(abilities.Passives, Embeddable):
 	def __init__(self, passives: abilities.Passives):
