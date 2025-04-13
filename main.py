@@ -7,12 +7,14 @@ from discord.ext import commands
 import commons.idx as idx
 from catbot import embeds
 
+from catbot.help import CustomHelpCommand
+
 idx.setup()
 
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot(command_prefix='!', intents=intents)
+bot = commands.Bot(command_prefix='!', intents=intents, help_command=CustomHelpCommand())
 
 
 @bot.command(aliases=['comboname'])
@@ -26,7 +28,7 @@ async def combo(ctx, *args):
 	await ctx.send(embed=embed)
 
 
-@bot.command(aliases=['talentsof'])
+@bot.command(aliases=['talentsof', 'to'])
 async def talent(ctx, *args):
 	target = " ".join(args)
 	form = idx.forms.lookup(target)
@@ -39,8 +41,9 @@ async def talent(ctx, *args):
 
 
 class ESFlags(commands.FlagConverter, delimiter=' ', prefix='-', case_insensitive=True):
-	name: str = commands.flag(name='name', positional=True, default='')
-	mag: typing.Tuple[int, ...] = commands.flag(name='mag', aliases=['m'], default=(100,), max_args=1)
+	name: str = commands.flag(name='name', description="Enemy Name", positional=True, default='')
+	mag: typing.Tuple[int, ...] = commands.flag(name='mag', aliases=['m'], default=(100,100), max_args=1,
+																							description="Magnification (HP, Atk)")
 
 
 @bot.command(aliases=['es'])
@@ -56,23 +59,45 @@ async def enemy(ctx, *, flags: ESFlags):
 	embed.set_thumbnail(url=f"attachment://{fl_id}.png")
 	await ctx.send(file=upload_file, embed=embed)
 
+class CatIDConverter(commands.Converter):
+	async def convert(self, ctx: commands.Context, argument: str):
+		return idx.units.get(int(argument))
 
 class CSFlags(commands.FlagConverter, delimiter=' ', prefix='-', case_insensitive=True):
-	name: str = commands.flag(name='name', positional=True, default='')
-	level: int = commands.flag(name='level', aliases=['l'], default=30, max_args=1)
-	form: int = commands.flag(name='form', aliases=['f'], default=0, max_args=1)
-	talents: typing.Tuple[int, ...] = commands.flag(name='talents', aliases=['t'], default=[])
+	form: idx.forms.lookup = commands.flag(name='name', positional=True, default=None, description="Unit Name")
+	cat: CatIDConverter = commands.flag(name='id', default=None, description="ID of unit, unit name is ignored when this is provided")
+	level: int = commands.flag(name='level', aliases=['l'], default=30, max_args=1, description="Unit Level")
+	to_form: int = commands.flag(name='form', aliases=['f'], default=-1, max_args=1, description="Unit Form (0 = first, 1 = evolved, 2 = true, 3 = ultra)")
+	talents: typing.Tuple[int, ...] = commands.flag(name='talents', aliases=['t'], default=tuple(), description="Talents, send -1 to max all")
 
 
 @bot.command(aliases=['cs'])
 async def cat(ctx, *, flags: CSFlags):
-	form = idx.forms.lookup(flags.name)
-	form = embeds.Form(idx.units[form.id_[0]].to_level(flags.level).forms()[form.id_[1]])
+	if flags.form:
+		cat_ = idx.units[flags.form.id_[0]]
+	elif flags.cat:
+		cat_ = flags.cat
+	else:
+		raise ValueError("either cat ID or form should be provided")
 
-	embed = discord.Embed(colour=discord.Colour.green(), title=f"{form.name} [{form.id_[0]}-{form.id_[1]}] (Lv. "
-																														 f"{flags.level})")
-	form.embed_in(embed)
-	embed.add_field(name="talents", value=flags.talents, inline=False)
+	forms = cat_.to_level(flags.level).forms()
+
+	if 0 <= flags.to_form < len(forms):
+		form = forms[flags.to_form]
+	elif flags.form:
+		form = forms[flags.form.id_[-1]]
+	else:
+		form = forms[-1]
+
+
+	if flags.talents:
+		talents = idx.talents[cat_.id_]
+		levels = [10]*10 if flags.talents == (-1,) else flags.talents
+		for t, level in zip(talents, levels):
+			form = t.apply_level_to(level, form)
+
+	embed = discord.Embed(colour=discord.Colour.green(), title=f"{form.name} [{form.id_[0]}-{form.id_[1]}] (Lv. {flags.level})")
+	embeds.Form(form).embed_in(embed)
 
 	fl_id = f"{form.id_[0]:03}_{form.id_[1]}"
 	embed.set_thumbnail(url=f"attachment://{fl_id}.png")

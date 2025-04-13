@@ -14,7 +14,7 @@ class Passives(abilities.Passives, Embeddable):
 		if self.immunities:
 			embed.add_field(name="Immunities", value='immune to ' + ', '.join(x.to for x in self.immunities), inline=False)
 		if self.resists:
-			embed.add_field(name="Resistances", value='resists ' + ', '.join(f"{x.to} [{x.amt}]" for x in self.resists),
+			embed.add_field(name="Resistances", value='resists ' + ', '.join(f"{x.to} [{x.amt}%]" for x in self.resists),
 											inline=False)
 		if self.defensives:
 			embed.add_field(name="Defensives", value='\n'.join(str(x) for x in self.defensives), inline=False)
