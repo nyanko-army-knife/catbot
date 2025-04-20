@@ -6,7 +6,6 @@ from discord.ext import commands
 
 import commons.idx as idx
 from catbot import embeds
-
 from catbot.help import CustomHelpCommand
 
 idx.setup()
@@ -42,14 +41,14 @@ async def talent(ctx, *args):
 
 class ESFlags(commands.FlagConverter, delimiter=' ', prefix='-', case_insensitive=True):
 	name: str = commands.flag(name='name', description="Enemy Name", positional=True, default='')
-	mag: typing.Tuple[int, ...] = commands.flag(name='mag', aliases=['m'], default=(100,100), max_args=1,
+	mag: typing.Tuple[int, ...] = commands.flag(name='mag', aliases=['m'], default=(100, 100), max_args=1,
 																							description="Magnification (HP, Atk)")
 
 
 @bot.command(aliases=['es'])
 async def enemy(ctx, *, flags: ESFlags):
 	enem = embeds.Enemy(idx.enemies.lookup(flags.name))
-	enem = enem.apply_mag(*flags.mag[:2])
+	enem = enem.to_mag(*flags.mag[:2])
 
 	embed = discord.Embed(colour=discord.Colour.red(), title=f"{enem.name} [{enem.id_}] {flags.mag}%")
 	enem.embed_in(embed)
@@ -59,16 +58,21 @@ async def enemy(ctx, *, flags: ESFlags):
 	embed.set_thumbnail(url=f"attachment://{fl_id}.png")
 	await ctx.send(file=upload_file, embed=embed)
 
+
 class CatIDConverter(commands.Converter):
 	async def convert(self, ctx: commands.Context, argument: str):
 		return idx.units.get(int(argument))
 
+
 class CSFlags(commands.FlagConverter, delimiter=' ', prefix='-', case_insensitive=True):
 	form: idx.forms.lookup = commands.flag(name='name', positional=True, default=None, description="Unit Name")
-	cat: CatIDConverter = commands.flag(name='id', default=None, description="ID of unit, unit name is ignored when this is provided")
+	cat: CatIDConverter = commands.flag(name='id', default=None,
+																			description="ID of unit, unit name is ignored when this is provided")
 	level: int = commands.flag(name='level', aliases=['l'], default=30, max_args=1, description="Unit Level")
-	to_form: int = commands.flag(name='form', aliases=['f'], default=-1, max_args=1, description="Unit Form (0 = first, 1 = evolved, 2 = true, 3 = ultra)")
-	talents: typing.Tuple[int, ...] = commands.flag(name='talents', aliases=['t'], default=tuple(), description="Talents, send -1 to max all")
+	to_form: int = commands.flag(name='form', aliases=['f'], default=-1, max_args=1,
+															 description="Unit Form (0 = first, 1 = evolved, 2 = true, 3 = ultra)")
+	talents: typing.Tuple[int, ...] = commands.flag(name='talents', aliases=['t'], default=tuple(),
+																									description="Talents, send -1 to max all")
 
 
 @bot.command(aliases=['cs'])
@@ -89,14 +93,14 @@ async def cat(ctx, *, flags: CSFlags):
 	else:
 		form = forms[-1]
 
-
 	if flags.talents:
 		talents = idx.talents[cat_.id_]
-		levels = [10]*10 if flags.talents == (-1,) else flags.talents
+		levels = [10] * 10 if flags.talents == (-1,) else flags.talents
 		for t, level in zip(talents, levels):
 			form = t.apply_level_to(level, form)
 
-	embed = discord.Embed(colour=discord.Colour.green(), title=f"{form.name} [{form.id_[0]}-{form.id_[1]}] (Lv. {flags.level})")
+	embed = discord.Embed(colour=discord.Colour.green(),
+												title=f"{form.name} [{form.id_[0]}-{form.id_[1]}] (Lv. {flags.level})")
 	embeds.Form(form).embed_in(embed)
 
 	fl_id = f"{form.id_[0]:03}_{form.id_[1]}"

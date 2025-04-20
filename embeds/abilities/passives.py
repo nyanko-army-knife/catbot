@@ -11,13 +11,15 @@ class Passives(abilities.Passives, Embeddable):
 
 	@override
 	def embed_in(self, embed: discord.Embed) -> discord.Embed:
+		v = ""
 		if self.immunities:
-			embed.add_field(name="Immunities", value='immune to ' + ', '.join(x.to for x in self.immunities), inline=False)
+			v += '— immune to ' + ', '.join(x.to for x in self.immunities) + '\n'
 		if self.resists:
-			embed.add_field(name="Resistances", value='resists ' + ', '.join(f"{x.to} [{x.amt}%]" for x in self.resists),
-											inline=False)
+			v += '— resists ' + ', '.join(f"{y.to} [{y.amt}%]" for y in self.resists) + '\n'
 		if self.defensives:
-			embed.add_field(name="Defensives", value='\n'.join(str(x) for x in self.defensives), inline=False)
+			v += '\n'.join("— " + str(x) for x in self.defensives) + '\n'
 		if self.offensives:
-			embed.add_field(name="Offensives", value='\n'.join(str(x) for x in self.offensives), inline=False)
+			v += '\n'.join("— " + str(x) for x in self.offensives) + '\n'
+		if v:
+			embed.add_field(name='Passives', value=v.rstrip("\n"), inline=False)
 		return embed

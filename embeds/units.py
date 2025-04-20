@@ -13,13 +13,16 @@ class Form(models.Form, Entity, Embeddable):
 	def embed_in(self, embed: discord.Embed) -> discord.Embed:
 		trait_emojis = [emoji_by_name(f'trait_{trait}') for trait in self.traits]
 		ptrait_emojis = [emoji_by_name(f'ptrait_{ptrait}') for ptrait in self.ptraits]
-		ability_emois = [emoji_by_name(f'mult_{mult}') for mult in self.mults]
-		if trait_emojis or ptrait_emojis:
-			embed.add_field(name="Targets", value="".join(trait_emojis + ptrait_emojis) + "\n" + "".join(ability_emois),
-											inline=len(trait_emojis + ptrait_emojis) < 6)
-		embed.add_field(name="Cost", value=f'{self.cost:,}', inline=True)
-		embed.add_field(name="Cooldown", value=f'{self.cooldown:,}f', inline=True)
+		mult_emojis = [emoji_by_name(f'mult_{mult}') for mult in self.mults]
+		embed.add_field(name="Cost - Cooldown",
+										value=f'{self.cost:,} - '
+													f'{self.cooldown:,}f',
+										inline=True)
 		super().embed_in(embed)
+		if trait_emojis or ptrait_emojis:
+			v = "".join(mult_emojis) + " vs. " + "".join(trait_emojis)
+			if ptrait_emojis: v += " | " + "".join(ptrait_emojis)
+			embed.add_field(name="Targets", value=v, inline=True)
 		return embed
 
 
