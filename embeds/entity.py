@@ -12,7 +12,7 @@ class Entity(models.Entity, Embeddable):
 	def embed_in(self, embed: discord.Embed) -> discord.Embed:
 		embed.add_field(name=f"Atk (DPS)", value=f'{self.atk} ({30 * self.atk / self.breakup.cd_effective:.2f})',
 										inline=True)
-		embed.add_field(name="HP - Spd", value=f'{self.hp:,} - {self.speed}', inline=True)
+		embed.add_field(name="HP - KB Count", value=f'{self.hp:,} - {self.kb}', inline=True)
 
 		if self.breakup.hit_1 is not None:
 			embed.add_field(name="Breakup", value=str(self.breakup), inline=True)
@@ -29,10 +29,10 @@ class Entity(models.Entity, Embeddable):
 			else:
 				display_range += f' [{basehit.range_start + basehit.range_width}~{basehit.range_start}]'
 
-		embed.add_field(name="Range - Area? - KB Count",
+		embed.add_field(name="Range - Area? - Speed",
 										value=f'{display_range} - '
 													f'{self.area_attack} - '
-													f'{self.kb}', inline=True)
+													f'{self.speed}', inline=True)
 
 		if self.extensions or self.abilities:
 			embed.add_field(name="Abilities",
