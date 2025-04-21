@@ -65,7 +65,7 @@ class CatIDConverter(commands.Converter):
 
 
 class CSFlags(commands.FlagConverter, delimiter=' ', prefix='-', case_insensitive=True):
-	form: idx.forms.lookup = commands.flag(name='name', positional=True, default=None, description="Unit Name")
+	form: str = commands.flag(name='name', positional=True, default=None, description="Unit Name")
 	cat: CatIDConverter = commands.flag(name='id', default=None,
 																			description="ID of unit, unit name is ignored when this is provided")
 	level: int = commands.flag(name='level', aliases=['l'], default=30, max_args=1, description="Unit Level")
@@ -77,8 +77,10 @@ class CSFlags(commands.FlagConverter, delimiter=' ', prefix='-', case_insensitiv
 
 @bot.command(aliases=['cs'])
 async def cat(ctx, *, flags: CSFlags):
+	form, match_score = None, -1
 	if flags.form:
-		cat_ = idx.units[flags.form.id_[0]]
+		form, match_score = idx.forms.lookup_with_score(flags.form)
+		cat_ = idx.units[form.id_[0]]
 	elif flags.cat:
 		cat_ = flags.cat
 	else:
@@ -88,8 +90,8 @@ async def cat(ctx, *, flags: CSFlags):
 
 	if 0 <= flags.to_form < len(forms):
 		form = forms[flags.to_form]
-	elif flags.form:
-		form = forms[flags.form.id_[-1]]
+	elif flags.form and match_score > 80:
+		form = forms[form.id_[-1]]
 	else:
 		form = forms[-1]
 
