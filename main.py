@@ -28,7 +28,7 @@ async def auth(ctx: discord.Message):
 
 	guild_perms = permissions.get(str(ctx.guild.id))
 	if not guild_perms: return True
-	return (set(guild_perms["roles"]) and role_ids) or (user_id in guild_perms["users"]) or (
+	return (set(guild_perms["roles"]) & role_ids) or (user_id in guild_perms["users"]) or (
 					channel_id in guild_perms["channels"])
 
 
