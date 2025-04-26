@@ -3,7 +3,7 @@ import os
 
 import discord
 
-from extractors import c
+from commons import c
 
 intents = discord.Intents.default()
 intents.message_content = True
