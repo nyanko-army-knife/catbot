@@ -3,6 +3,8 @@ import os
 
 import discord
 
+from extractors import c
+
 intents = discord.Intents.default()
 intents.message_content = True
 
@@ -24,7 +26,7 @@ async def on_ready():
 	dump = {emoji.name: emoji.id for emoji in emojis}
 	with open('catbot/assets_cache/emojis.json', 'w') as fl:
 		json.dump(dump, fl, indent=2)
-	print("dumped")
+	c.logger.info("dumped")
 
 
 client.run(os.getenv("CATBOT_API_KEY"))
