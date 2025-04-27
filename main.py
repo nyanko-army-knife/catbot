@@ -92,7 +92,7 @@ class CSFlags(commands.FlagConverter, delimiter=' ', prefix='-', case_insensitiv
 
 
 @bot.command(aliases=['cs'])
-async def cat(ctx, *, flags: CSFlags):
+async def cat(ctx: discord.ext.commands.Context, *, flags: CSFlags):
 	form, match_score = None, -1
 	if flags.form:
 		form, match_score = idx.forms.lookup_with_score(flags.form)
@@ -125,6 +125,13 @@ async def cat(ctx, *, flags: CSFlags):
 	embed.set_thumbnail(url=f"attachment://{fl_id}.png")
 	upload_file = discord.File(f'data/img/unit/{fl_id}.png', filename=f'{fl_id}.png')
 	await ctx.send(file=upload_file, embed=embed)
+
+	if embed.footer.text:
+		spirit = await CatIDConverter().convert(ctx, ''.join(x for x in embed.footer.text if x.isnumeric()))
+		flags.cat = spirit
+		flags.form = None
+		flags.to_form = 0
+		await ctx.invoke(cat, flags=flags)
 
 
 @bot.command(aliases=['si'])

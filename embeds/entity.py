@@ -4,18 +4,19 @@ import discord
 
 from catbot.embeds.embed import Embeddable
 from commons import models
+
 from .abilities import Passives
 
 
 @dataclass
 class Entity(models.Entity, Embeddable):
 	def embed_in(self, embed: discord.Embed) -> discord.Embed:
-		embed.add_field(name=f"Atk (DPS)", value=f'{self.atk} ({30 * self.atk / self.breakup.cd_effective:.2f})',
+		embed.add_field(name="Atk (DPS)", value=f'{self.atk} ({30 * self.atk / self.breakup.cd_effective:.2f})',
 										inline=True)
 		embed.add_field(name="HP - KB Count", value=f'{self.hp:,} - {self.kb}', inline=True)
 
 		if self.breakup.hit_1 is not None:
-			embed.add_field(name="Breakup", value=str(self.breakup), inline=True)
+			embed.add_field(name="Timings", value=str(self.breakup), inline=True)
 		else:
 			embed.add_field(name="Timings",
 											value=f'↑{self.breakup.hit_0.foreswing}f / ↓{self.breakup.backswing}f / ⏲{self.breakup.tba}f',

@@ -2,6 +2,7 @@ import discord
 from typing_extensions import override
 
 import commons.models.abilities as abilities
+
 from ..embed import Embeddable
 
 
@@ -22,4 +23,8 @@ class Passives(abilities.Passives, Embeddable):
 			v += '\n'.join("— " + str(x) for x in self.offensives) + '\n'
 		if v:
 			embed.add_field(name='Passives', value=v.rstrip("\n"), inline=False)
+
+		for offensive in self.offensives:
+			if isinstance(offensive, abilities.Conjure):
+				embed.set_footer(text=f"this unit has a summon: {offensive.spirit_id}")
 		return embed
