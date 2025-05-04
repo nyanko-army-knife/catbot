@@ -1,5 +1,6 @@
 from typing import Any
 
+import discord
 from discord.ext import commands
 from discord.ext.commands import Command, FlagConverter
 from typing_extensions import override
@@ -7,26 +8,55 @@ from typing_extensions import override
 
 class CustomHelpCommand(commands.DefaultHelpCommand):
 	@override
-	def add_command_arguments(self, command: Command[Any, ..., Any], /) -> None:
+	async def send_bot_help(self, mapping):
+		embed = discord.Embed(title="Command List")
+		for cog, cmds in mapping.items():
+			command_signatures = [f"**{self.get_command_signature(c)}** --- {c.description}" for c in cmds if c.description]
+			if command_signatures:
+				cog_name = getattr(cog, "qualified_name", "no category")
+				embed.add_field(name=cog_name, value="\n".join(command_signatures), inline=False)
+
+		channel = self.get_destination()
+		await channel.send(embed=embed)
+
+	@override
+	def get_command_signature(self, command: Command):
+		name = command.name
+		if command.aliases:
+			name += f' [/{'/'.join(command.aliases)}]'
+
+		return name
+
+	async def send_command_help(self, command):
+		embed = discord.Embed(title=self.get_command_signature(command))
+		embed.add_field(name="Description", value=command.description, inline=False)
+
+		argtext = self.command_arguments(command)
+		if argtext:
+			embed.add_field(name="Arguments", value=argtext, inline=False)
+
+		if command.help:
+			embed.add_field(name="Examples", value=command.help, inline=False)
+
+		channel = self.get_destination()
+		await channel.send(embed=embed)
+
+	def command_arguments(self, command: Command[Any, ..., Any], /) -> str:
 		arguments = command.clean_params.values()
-		if not arguments: return None
+		if not arguments: return ""
 		arg = next(iter(arguments), None)
 		if not issubclass(arg.annotation, FlagConverter):
-			return super().add_command_arguments(command)
+			return ""
 		arguments = list(arg.annotation.get_flags().values())
 
 		self.paginator.add_line(self.arguments_heading)
-		max_size = self.get_max_size(arguments)  # type: ignore # not a command
-
+		entry = ""
 		for argument in arguments:
-			name = argument.name
-			entry = (f'{self.indent * " "}{name:<{max_size}} '
-							 f'{f'[{','.join(argument.aliases)}] ' if argument.aliases else ''} '
-							 f'{argument.description or self.default_argument_description}')
-			# we do not want to shorten the default value, if any.
-			entry = self.shorten_text(entry)
+			entry += (f'**{argument.name}** '
+								f'{f'**[/{'/'.join(argument.aliases)}]** ' if argument.aliases else ''} '
+								f' --- {argument.description or self.default_argument_description}')
 			if argument.default is not None:
 				entry += f' (default: {argument.default})'
+			entry += '\n'
 
-			self.paginator.add_line(entry)
-		return None
+		return entry
