@@ -13,10 +13,10 @@ class CatIDConverter(commands.Converter):
 
 
 class CSFlags(commands.FlagConverter, delimiter=' ', prefix='-', case_insensitive=True):
-	form: str = commands.flag(name='name', positional=True, default=None, description="Unit Name")
+	form: str = commands.flag(name='name', positional=True, description="unit name", default="")
 	cat: CatIDConverter = commands.flag(name='id', default=None,
 																			description="ID of unit, unit name is ignored when this is provided")
-	level: int = commands.flag(name='level', aliases=['l'], default=30, max_args=1, description="Unit Level")
+	level: int = commands.flag(name='level', aliases=['l'], default=50, max_args=1, description="unit level")
 	to_form: int = commands.flag(name='form', aliases=['f'], default=-1, max_args=1,
 															 description="Unit Form (0 = first, 1 = evolved, 2 = true, 3 = ultra)")
 	talents: typing.Tuple[int, ...] = commands.flag(name='talents', aliases=['t'], default=tuple(),
@@ -67,7 +67,12 @@ class CatCog(commands.Cog):
 
 		fl_id = f"{form.id_[0]:03}_{form.id_[1]}"
 		embed.set_thumbnail(url=f"attachment://{fl_id}.png")
-		upload_file = discord.File(f'data/img/unit/{fl_id}.png', filename=f'{fl_id}.png')
+
+		try:
+			upload_file = discord.File(f'data/img/unit/{fl_id}.png', filename=f'{fl_id}.png')
+		except FileNotFoundError:
+			upload_file = None
+
 		await ctx.send(file=upload_file, embed=embed)
 
 		if embed.footer.text:
@@ -105,4 +110,21 @@ class CatCog(commands.Cog):
 		embed = discord.Embed(colour=discord.Colour.greyple(), title=f"Talents of {form.name} {form.id_}")
 		talents.embed_in(embed)
 
+		await ctx.send(embed=embed)
+
+	@commands.command(
+		aliases=['cfind'],
+		description="finds closest matches to cat name",
+		help=';cfind Lasvoss\n'
+				 ';cfind dark lazer\n'
+	)
+	async def catfind(self, ctx, *args):
+		target = " ".join(args)
+		is_quick, lookups = idx.forms.lookup_debug(target)
+
+		finds = [f"{x.name}: {x.score:0.02f}%" for x in lookups]
+
+		embed = discord.Embed(colour=discord.Colour.dark_blue(), title=f"Searching name {target}")
+		embed.add_field(name="quick?", value=is_quick, inline=False)
+		embed.add_field(name="closest finds", value="\n".join(finds), inline=False)
 		await ctx.send(embed=embed)

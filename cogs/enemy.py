@@ -37,3 +37,19 @@ class EnemyCog(commands.Cog):
 		upload_file = discord.File(f'data/img/enemy/{fl_id}.png', filename=f'{fl_id}.png')
 		embed.set_thumbnail(url=f"attachment://{fl_id}.png")
 		await ctx.send(file=upload_file, embed=embed)
+
+	@commands.command(
+		aliases=['efind'],
+		description="finds closest matches to enemy name",
+		help=';cfind bakoo\n'
+	)
+	async def enemy_find(self, ctx, *args):
+		target = " ".join(args)
+		is_quick, lookups = idx.enemies.lookup_debug(target)
+
+		finds = [f"{x.name}: {x.score:0.02f}%" for x in lookups]
+
+		embed = discord.Embed(colour=discord.Colour.dark_blue(), title=f"Searching enemy name {target}")
+		embed.add_field(name="quick?", value=is_quick, inline=False)
+		embed.add_field(name="closest finds", value="\n".join(finds), inline=False)
+		await ctx.send(embed=embed)
