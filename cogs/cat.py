@@ -16,11 +16,12 @@ class CSFlags(commands.FlagConverter, delimiter=' ', prefix='-', case_insensitiv
 	form: str = commands.flag(name='name', positional=True, description="unit name", default="")
 	cat: CatIDConverter = commands.flag(name='id', default=None,
 																			description="ID of unit, unit name is ignored when this is provided")
-	level: int = commands.flag(name='level', aliases=['l'], default=50, max_args=1, description="unit level")
+	level: int = commands.flag(name='level', aliases=['l', 'lv'], default=50, max_args=1, description="unit level")
 	to_form: int = commands.flag(name='form', aliases=['f'], default=-1, max_args=1,
 															 description="Unit Form (0 = first, 1 = evolved, 2 = true, 3 = ultra)")
 	talents: typing.Tuple[int, ...] = commands.flag(name='talents', aliases=['t'], default=tuple(),
 																									description="Talents, send -1 to max all")
+	verbose: bool = commands.flag(name='verbose', aliases=['v'], default=False, description="verbose (display summon)")
 
 
 class CatCog(commands.Cog):
@@ -38,7 +39,14 @@ class CatCog(commands.Cog):
 	async def cat(self, ctx: discord.ext.commands.Context, *, flags: CSFlags):
 		form, match_score = None, -1
 		if flags.form:
-			form, match_score = idx.forms.lookup_with_score(flags.form)
+			pieces = flags.form.split("-")
+			if all(x.isnumeric() for x in pieces):
+				try:
+					form = idx.units[int(pieces[0])].forms()[int(pieces[1])]
+				except IndexError:
+					pass
+			else:
+				form, match_score = idx.forms.lookup_with_score(flags.form)
 			cat_ = idx.units[form.id_[0]]
 		elif flags.cat:
 			cat_ = flags.cat
@@ -78,7 +86,7 @@ class CatCog(commands.Cog):
 		if embed.footer.text:
 			spirit = await CatIDConverter().convert(ctx, ''.join(x for x in embed.footer.text if x.isnumeric()))
 			flags.cat = spirit
-			flags.form = None
+			flags.form = ""
 			flags.to_form = 0
 			await ctx.invoke(self.cat, flags=flags)
 
