@@ -3,6 +3,9 @@ import discord
 from catbot.embeds.embed import Embeddable
 from catbot.embeds.entity import Entity
 from commons import models
+from commons.models import Rarity, UnlockMethod
+
+from .. import utils
 from ..utils import emoji_by_name
 
 
@@ -23,20 +26,47 @@ class Form(models.Form, Entity, Embeddable):
 			v = "".join(mult_emojis) + " vs. " + "".join(trait_emojis)
 			if ptrait_emojis: v += " | " + "".join(ptrait_emojis)
 			embed.add_field(name="Targets", value=v, inline=True)
+		embed.add_field(name="Description", value=self.description.rstrip("\n"), inline=False)
 		return embed
 
 
-class Cat(models.Cat):
+class Cat(models.Cat, Embeddable):
 	form_base: Form = None
 	form_evolved: Form = None
 	form_true: Form = None
 	form_ultra: Form = None
 
 	def __init__(self, cat: models.Cat):
-		super().__init__(cat)
+		super().__init__(**vars(cat))
 
-	def to_level(self, level: int) -> 'Cat':
-		return super().to_level(level)
+	def embed_in(self, embed: discord.Embed) -> discord.Embed:
+		embed.add_field(name="Rarity - Unlock Method",
+										value=f"{Rarity(self.rarity).label} - {UnlockMethod(self.unlock_method).label}")
 
-	def forms(self) -> list[Form]:
-		return super().forms()
+		max_level_base, max_level_catseyes, max_boost = self.max_level
+		embed.add_field(name="Max Level", value=f"{max_level_base}(->{max_level_catseyes}) + {max_boost}")
+
+		if self.tf_level > 0:
+			txt = f"level: {self.tf_level}"
+			if self.tf_xp:
+				txt += f" | XP: {self.tf_xp}"
+			if self.tf_reqs:
+				txt += "\n"
+				reqtext = []
+				for req in self.tf_reqs:
+					reqtext += [f"{emoji_by_name(utils.item_icons[req[0]])}x{req[1]}"]
+				txt += " | ".join(reqtext)
+			embed.add_field(name="True Form", value=txt, inline=False)
+
+		if self.uf_level > 0:
+			txt = f"level: {self.uf_level}"
+			if self.uf_xp:
+				txt += f" | XP: {self.uf_xp}"
+			if self.uf_reqs:
+				txt += "\n"
+				reqtext = []
+				for req in self.uf_reqs:
+					reqtext += [f"{emoji_by_name(utils.item_icons[req[0]])}x{req[1]}"]
+				txt += " | ".join(reqtext)
+			embed.add_field(name="Ultra Form", value=txt, inline=False)
+		return embed

@@ -5,6 +5,24 @@ from discord.ext import commands
 
 from catbot import embeds
 from commons import idx
+from commons.models import Cat
+
+
+# gets cat and implied form ID from form name
+def get_cat(form_name: str) -> tuple[Cat, int, float]:
+	cat_id, form_id = -1, -1
+	match_score: float = -1
+	try:  # try to look up by form ID
+		c_id, f_id, *_ = map(int, form_name.split("-"))
+		_ = idx.units[c_id][f_id]
+		cat_id, form_id = c_id, f_id
+	except (IndexError, ValueError):
+		form, match_score = idx.forms.lookup_with_score(form_name)
+		cat_id = form.id_[0]
+		if match_score > 80:
+			form_id = form.id_[1]
+
+	return idx.units.get(cat_id), form_id, match_score
 
 
 class CatIDConverter(commands.Converter):
@@ -13,7 +31,7 @@ class CatIDConverter(commands.Converter):
 
 
 class CSFlags(commands.FlagConverter, delimiter=' ', prefix='-', case_insensitive=True):
-	form: str = commands.flag(name='name', positional=True, description="unit name", default="")
+	form_name: str = commands.flag(name='name', positional=True, description="unit name", default="")
 	cat: CatIDConverter = commands.flag(name='id', default=None,
 																			description="ID of unit, unit name is ignored when this is provided")
 	level: int = commands.flag(name='level', aliases=['l', 'lv'], default=50, max_args=1, description="unit level")
@@ -22,6 +40,10 @@ class CSFlags(commands.FlagConverter, delimiter=' ', prefix='-', case_insensitiv
 	talents: typing.Tuple[int, ...] = commands.flag(name='talents', aliases=['t'], default=tuple(),
 																									description="Talents, send -1 to max all")
 	verbose: bool = commands.flag(name='verbose', aliases=['v'], default=False, description="verbose (display summon)")
+
+
+class CIFlags(commands.FlagConverter, delimiter=' ', prefix='-', case_insensitive=True):
+	form_name: str = commands.flag(name='name', positional=True, description="unit name", default="")
 
 
 class CatCog(commands.Cog):
@@ -36,41 +58,32 @@ class CatCog(commands.Cog):
 		help=";cs Lasvoss -f 2\n"
 				 ";cs Akira -f 2 -t -1\n"
 	)
-	async def cat(self, ctx: discord.ext.commands.Context, *, flags: CSFlags):
-		form, match_score = None, -1
-		if flags.form:
-			pieces = flags.form.split("-")
-			if all(x.isnumeric() for x in pieces):
-				try:
-					form = idx.units[int(pieces[0])].forms()[int(pieces[1])]
-				except IndexError:
-					pass
-			else:
-				form, match_score = idx.forms.lookup_with_score(flags.form)
-			cat_ = idx.units[form.id_[0]]
-		elif flags.cat:
-			cat_ = flags.cat
+	async def catstats(self, ctx: discord.ext.commands.Context, *, flags: CSFlags):
+		form_id: int = -1
+		if flags.cat:
+			cat_, confidence = flags.cat, 100
+		elif flags.form_name:
+			cat_, form_id, confidence = get_cat(flags.form_name)
 		else:
-			raise ValueError("either cat ID or form should be provided")
+			raise ValueError("No form or cat provided")
 
-		forms = cat_.to_level(flags.level).forms()
+		if flags.to_form >= 0:
+			form_id = flags.to_form
 
-		if 0 <= flags.to_form < len(forms):
-			form = forms[flags.to_form]
-		elif flags.form and match_score > 80:
-			form = forms[form.id_[-1]]
+		if confidence > 90 or flags.to_form >= 0:
+			form, level = cat_.form_to_level(form_id, flags.level, upcast=True)
 		else:
-			form = forms[-1]
+			form, level = cat_.form_to_level(form_id, flags.level)
 
 		if flags.talents:
 			talents = idx.talents[cat_.id_]
 			levels = [10] * 10 if flags.talents == (-1,) else flags.talents
-			for t, level in zip(talents, levels):
-				if level > 0:
-					form = t.apply_level_to(level, form)
+			for t, talent_level in zip(talents, levels):
+				if talent_level > 0:
+					form = t.apply_level_to(talent_level, form)
 
 		embed = discord.Embed(colour=discord.Colour.green(),
-													title=f"{form.name} [{form.id_[0]}-{form.id_[1]}] (Lv. {flags.level})")
+													title=f"{form.name} [{form.id_[0]}-{form.id_[1]}] (Lv. {level})")
 		embeds.Form(form).embed_in(embed)
 
 		fl_id = f"{form.id_[0]:03}_{form.id_[1]}"
@@ -85,10 +98,28 @@ class CatCog(commands.Cog):
 
 		if embed.footer.text:
 			spirit = await CatIDConverter().convert(ctx, ''.join(x for x in embed.footer.text if x.isnumeric()))
-			flags.cat = spirit
-			flags.form = ""
-			flags.to_form = 0
+			flags.cat, flags.form, flags.to_form = spirit, "", 0
 			await ctx.invoke(self.cat, flags=flags)
+
+	@commands.command(
+		aliases=['ci'],
+		description="display info of cat",
+		help=";ci Lasvoss\n"
+	)
+	async def catinfo(self, ctx: discord.ext.commands.Context, *, flags: CIFlags):
+		cat_, form_id, confidence = get_cat(flags.form_name)
+
+		embed = discord.Embed(colour=discord.Colour.green(), title=f"{cat_[-1].name} [{cat_.id_}]")
+		embed = embeds.Cat(cat_).embed_in(embed)
+
+		fl_id = f"{cat_.id_:03}_{cat_[-1].id_[1]}"
+		embed.set_thumbnail(url=f"attachment://{fl_id}.png")
+		try:
+			upload_file = discord.File(f'data/img/unit/{fl_id}.png', filename=f'{fl_id}.png')
+		except FileNotFoundError:
+			upload_file = None
+
+		await ctx.send(file=upload_file, embed=embed)
 
 	@commands.command(
 		aliases=['comboname'],
@@ -115,7 +146,8 @@ class CatCog(commands.Cog):
 		form = idx.forms.lookup(target)
 		talents = embeds.Talents(idx.talents[form.id_[0]])
 
-		embed = discord.Embed(colour=discord.Colour.greyple(), title=f"Talents of {form.name} {form.id_}")
+		embed = discord.Embed(colour=discord.Colour.greyple(),
+													title=f"Talents of {form.name} [{form.id_[0]}-{form.id_[1]}]")
 		talents.embed_in(embed)
 
 		await ctx.send(embed=embed)
