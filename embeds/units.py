@@ -26,7 +26,6 @@ class Form(models.Form, Entity, Embeddable):
 			v = "".join(mult_emojis) + " vs. " + "".join(trait_emojis)
 			if ptrait_emojis: v += " | " + "".join(ptrait_emojis)
 			embed.add_field(name="Targets", value=v, inline=True)
-		embed.add_field(name="Description", value=self.description.rstrip("\n"), inline=False)
 		return embed
 
 
@@ -49,7 +48,7 @@ class Cat(models.Cat, Embeddable):
 		if self.tf_level > 0:
 			txt = f"level: {self.tf_level}"
 			if self.tf_xp:
-				txt += f" | XP: {self.tf_xp}"
+				txt += f" | XP: {self.tf_xp:,}"
 			if self.tf_reqs:
 				txt += "\n"
 				reqtext = []
@@ -61,7 +60,7 @@ class Cat(models.Cat, Embeddable):
 		if self.uf_level > 0:
 			txt = f"level: {self.uf_level}"
 			if self.uf_xp:
-				txt += f" | XP: {self.uf_xp}"
+				txt += f" | XP: {self.uf_xp:,}"
 			if self.uf_reqs:
 				txt += "\n"
 				reqtext = []
