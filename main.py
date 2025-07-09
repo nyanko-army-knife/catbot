@@ -5,18 +5,19 @@ import discord
 from discord.ext import commands
 
 import commons.idx as idx
-from catbot import cogs
+from catbot import cogs, utils
 from catbot.help import CustomHelpCommand
-
-idx.setup()
 
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix=';', intents=intents, help_command=CustomHelpCommand())
+permissions = {}
 
-with open("catbot/assets_cache/privileges.json") as fl:
-	permissions = json.load(fl)
+def setup_perms():
+	global permissions
+	with open("catbot/assets_cache/privileges.json") as fl:
+		permissions = json.load(fl)
 
 
 @bot.check
@@ -35,7 +36,12 @@ async def auth(ctx: discord.Message):
 async def on_ready():
 	await bot.add_cog(cogs.CatCog(bot))
 	await bot.add_cog(cogs.EnemyCog(bot))
+	await bot.add_cog(cogs.EventCog(bot))
 	await bot.add_cog(cogs.StageCog(bot))
 
 
-bot.run(os.getenv("CATBOT_API_KEY"))
+if __name__ == "__main__":
+	idx.setup()
+	setup_perms()
+	utils.setup_icons()
+	bot.run(os.getenv("CATBOT_API_KEY"))

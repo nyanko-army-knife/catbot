@@ -122,7 +122,7 @@ class CatCog(commands.Cog):
 		await ctx.send(file=upload_file, embed=embed)
 
 	@commands.command(
-		aliases=['comboname'],
+		aliases=['comboname', 'cc'],
 		description="display effect and units of combo",
 		help=";combo biobone\n"
 	)
@@ -153,7 +153,7 @@ class CatCog(commands.Cog):
 		await ctx.send(embed=embed)
 
 	@commands.command(
-		aliases=['cfind'],
+		aliases=['cfind', 'cf'],
 		description="finds closest matches to cat name",
 		help=';cfind Lasvoss\n'
 				 ';cfind dark lazer\n'

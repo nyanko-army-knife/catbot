@@ -39,7 +39,7 @@ class EnemyCog(commands.Cog):
 		await ctx.send(file=upload_file, embed=embed)
 
 	@commands.command(
-		aliases=['efind'],
+		aliases=['efind', 'ef'],
 		description="finds closest matches to enemy name",
 		help=';cfind bakoo\n'
 	)
