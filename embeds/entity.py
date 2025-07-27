@@ -1,16 +1,13 @@
-from dataclasses import dataclass
-
 import discord
 
-from catbot.embeds.embed import Embeddable
 from commons import models
 
 from .abilities import Passives
 
 
-@dataclass
-class Entity(models.Entity, Embeddable):
-	def embed_in(self, embed: discord.Embed) -> discord.Embed:
+class Entity:
+	@staticmethod
+	def embed_in(self: models.Entity, embed: discord.Embed) -> discord.Embed:
 		embed.add_field(name="Atk (DPS)", value=f'{self.atk} ({30 * self.atk / self.breakup.cd_effective:.2f})',
 										inline=True)
 		embed.add_field(name="HP - KB Count", value=f'{self.hp:,} - {self.kb}', inline=True)
@@ -41,5 +38,5 @@ class Entity(models.Entity, Embeddable):
 														f"{''.join(f"— {x}\n" for x in self.abilities)}",
 											inline=False)
 		if self.passives:
-			Passives(self.passives).embed_in(embed)
+			Passives.embed_in(self.passives, embed)
 		return embed

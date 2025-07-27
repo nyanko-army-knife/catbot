@@ -1,15 +1,12 @@
 import discord
 
 import commons.models as models
-from catbot.embeds.embed import Embeddable
 from commons import idx
 
 
-class Stage(models.Stage, Embeddable):
-	def __init__(self, stage: models.Stage):
-		super().__init__(**vars(stage))
-
-	def embed_in(self, embed: discord.Embed) -> discord.Embed:
+class Stage:
+	@staticmethod
+	def embed_in(self: models.Stage, embed: discord.Embed) -> discord.Embed:
 		specs = f"length: {self.length:,} | base hp: {self.base_health:,} | enemy limit: {self.enemy_limit}"
 		embed.add_field(name="specs", value=specs, inline=False)
 		misc = []

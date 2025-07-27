@@ -1,14 +1,12 @@
-from typing import override
 
 import discord
 
 import commons.models.talents.effect as effect
-from catbot.embeds.embed import Embeddable
 
 
-class Talents(list[effect.Talent], Embeddable):
-	@override
-	def embed_in(self, embed: discord.Embed) -> discord.Embed:
+class Talents:
+	@staticmethod
+	def embed_in(self: list[effect.Talent], embed: discord.Embed) -> discord.Embed:
 		for talent in self:
 			np_cost = sum(talent.np_curve)
 			embed.add_field(name=talent.name + (" [+]" if talent.is_ultra else "") +

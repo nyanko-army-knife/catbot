@@ -27,11 +27,11 @@ class EnemyCog(commands.Cog):
 				 ";es baron seal -m 10000 1000\n"
 	)
 	async def enemy(self, ctx, *, flags: ESFlags):
-		enem = embeds.Enemy(idx.enemies.lookup(flags.name))
+		enem = idx.enemies.lookup(flags.name)
 		enem = enem.to_mag(*flags.mag[:2])
 
 		embed = discord.Embed(colour=discord.Colour.red(), title=f"{enem.name} [{enem.id_}] {flags.mag}%")
-		enem.embed_in(embed)
+		embeds.Enemy.embed_in(enem, embed)
 
 		fl_id = f'{enem.id_:03}'
 		upload_file = discord.File(f'data/img/enemy/{fl_id}.png', filename=f'{fl_id}.png')

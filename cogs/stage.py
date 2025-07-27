@@ -101,17 +101,17 @@ class StageCog(commands.Cog):
 				 ";si cats in the stars\n"
 	)
 	async def stage(self, ctx, *, args: SIFlags):
-		stg = embeds.Stage(idx.stages.lookup(args.stage))
+		stg = idx.stages.lookup(args.stage)
 		if args.id_ is not None:
 			try:
 				cat, map_, stg = args.id_
-				stg = embeds.Stage(idx.categories[args.id_[0]].maps[args.id_[1]].stages[args.id_[2]])
+				stg = idx.categories[args.id_[0]].maps[args.id_[1]].stages[args.id_[2]]
 			except KeyError:
 				pass
 
-		map_ = idx.categories[stg.id_[0]].maps[stg.id_[1]]
-		embed = discord.Embed(colour=discord.Colour.yellow(), title=f"{stg.name} - {map_.name} [{stg.id_str}]")
-		stg.embed_in(embed)
+		m_ = idx.categories[stg.id_[0]].maps[stg.id_[1]]
+		embed = discord.Embed(colour=discord.Colour.yellow(), title=f"{stg.name} - {m_.name} [{stg.id_str}]")
+		embeds.Stage.embed_in(stg, embed)
 		await ctx.send(embed=embed)
 
 	@commands.command(

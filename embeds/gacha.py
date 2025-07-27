@@ -3,25 +3,23 @@ from operator import attrgetter
 
 import discord
 
-from catbot.embeds.embed import Embeddable
 from commons import idx, models
+from commons.models import Rarity
 
 
-class Gacha(models.Gacha, Embeddable):
-	def __init__(self, gacha: models.Gacha):
-		super().__init__(**vars(gacha))
-
-	def embed_in(self, embed: discord.Embed) -> discord.Embed:
+class Gacha:
+	@staticmethod
+	def embed_in(self: models.Gacha, embed: discord.Embed) -> discord.Embed:
 		embed.add_field(name="series", value=self.series_id, inline=False)
 		if self.chara_id >= 0:
 			embed.add_field(name="chara", value=idx.units.get(self.chara_id), inline=False)
 		if self.units:
-			units = sorted((idx.units.get(int(unit)+1) for unit in self.units), key=attrgetter("rarity"), reverse=True)
+			units = sorted((idx.units.get(int(unit) + 1) for unit in self.units), key=attrgetter("rarity"), reverse=True)
 			for group in itertools.groupby(units, attrgetter("rarity")):
-				txt, rarity = [], ""
+				txt, rarity = [], Rarity.NORMAL
 				for unit in group[1]:
 					rarity = unit.rarity
-					mult = int(self.units[str(unit.id_-1)])
+					mult = int(self.units[str(unit.id_ - 1)])
 					txt += [f"{unit.form_base.name}" + (f"X {mult}" if mult > 1 else "")]
 				embed.add_field(name=f"units - {rarity}", value=", ".join(txt), inline=False)
 		if self.blue_orbs:

@@ -22,11 +22,11 @@ async def on_ready():
 		with open('data/static/icons/' + fl_name, 'rb') as fl:
 			await client.create_application_emoji(name=emoji_name, image=fl.read())
 
-	emojis: list[discord.Emoji] = await client.fetch_application_emojis()
-	dump = {emoji.name: emoji.id for emoji in emojis}
+	emojis_: list[discord.Emoji] = await client.fetch_application_emojis()
+	dump = {emoji.name: emoji.id for emoji in emojis_}
 	with open('catbot/assets_cache/emojis.json', 'w') as fl:
 		json.dump(dump, fl, indent=2)
 	c.logger.info("dumped")
 
 
-client.run(os.getenv("CATBOT_API_KEY"))
+client.run(os.getenv("CATBOT_API_KEY", ""))

@@ -84,7 +84,7 @@ class CatCog(commands.Cog):
 
 		embed = discord.Embed(colour=discord.Colour.green(),
 													title=f"{form.name} [{form.id_[0]}-{form.id_[1]}] (Lv. {level})")
-		embeds.Form(form).embed_in(embed)
+		embeds.Form.embed_in(form, embed)
 
 		fl_id = f"{form.id_[0]:03}_{form.id_[1]}"
 		embed.set_thumbnail(url=f"attachment://{fl_id}.png")
@@ -99,7 +99,7 @@ class CatCog(commands.Cog):
 		if embed.footer.text:
 			spirit = await CatIDConverter().convert(ctx, ''.join(x for x in embed.footer.text if x.isnumeric()))
 			flags.cat, flags.form, flags.to_form = spirit, "", 0
-			await ctx.invoke(self.cat, flags=flags)
+			await ctx.invoke(self.catstats, flags=flags)
 
 	@commands.command(
 		aliases=['ci'],
@@ -110,16 +110,15 @@ class CatCog(commands.Cog):
 		cat_, form_id, confidence = get_cat(flags.form_name)
 
 		embed = discord.Embed(colour=discord.Colour.green(), title=f"{cat_[-1].name} [{cat_.id_}]")
-		embed = embeds.Cat(cat_).embed_in(embed)
+		embed = embeds.Cat.embed_in(cat_, embed)
 
 		fl_id = f"{cat_.id_:03}_{cat_[-1].id_[1]}"
 		embed.set_thumbnail(url=f"attachment://{fl_id}.png")
 		try:
 			upload_file = discord.File(f'data/img/unit/{fl_id}.png', filename=f'{fl_id}.png')
+			await ctx.send(file=upload_file, embed=embed)
 		except FileNotFoundError:
-			upload_file = None
-
-		await ctx.send(file=upload_file, embed=embed)
+			await ctx.send(embed=embed)
 
 	@commands.command(
 		aliases=['comboname', 'cc'],
@@ -144,11 +143,10 @@ class CatCog(commands.Cog):
 	async def talent(self, ctx, *args):
 		target = " ".join(args)
 		form = idx.forms.lookup(target)
-		talents = embeds.Talents(idx.talents[form.id_[0]])
 
 		embed = discord.Embed(colour=discord.Colour.greyple(),
 													title=f"Talents of {form.name} [{form.id_[0]}-{form.id_[1]}]")
-		talents.embed_in(embed)
+		embeds.Talents.embed_in(idx.talents[form.id_[0]], embed)
 
 		await ctx.send(embed=embed)
 

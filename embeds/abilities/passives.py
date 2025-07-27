@@ -1,17 +1,12 @@
 import discord
-from typing_extensions import override
 
 import commons.models.abilities as abilities
+from commons import models
 
-from ..embed import Embeddable
 
-
-class Passives(abilities.Passives, Embeddable):
-	def __init__(self, passives: abilities.Passives):
-		super().__init__(**vars(passives))
-
-	@override
-	def embed_in(self, embed: discord.Embed) -> discord.Embed:
+class Passives:
+	@staticmethod
+	def embed_in(self: models.Passives, embed: discord.Embed) -> discord.Embed:
 		v = ""
 		if self.immunities:
 			v += '— immune to ' + ', '.join(x.to for x in self.immunities) + '\n'

@@ -1,19 +1,16 @@
 import discord
 
-from catbot.embeds.embed import Embeddable
-from catbot.embeds.entity import Entity
 from commons import models
 from commons.models import Rarity, UnlockMethod
 
 from .. import utils
 from ..utils import emoji_by_name
+from .entity import Entity
 
 
-class Form(models.Form, Entity, Embeddable):
-	def __init__(self, form: models.Form):
-		super().__init__(**vars(form))
-
-	def embed_in(self, embed: discord.Embed) -> discord.Embed:
+class Form:
+	@staticmethod
+	def embed_in(self: models.Form, embed: discord.Embed) -> discord.Embed:
 		trait_emojis = [emoji_by_name(f'trait_{trait}') for trait in self.traits]
 		ptrait_emojis = [emoji_by_name(f'ptrait_{ptrait}') for ptrait in self.ptraits]
 		mult_emojis = [emoji_by_name(f'mult_{mult}') for mult in self.mults]
@@ -21,7 +18,7 @@ class Form(models.Form, Entity, Embeddable):
 										value=f'{self.cost:,} - '
 													f'{self.cooldown:,}f',
 										inline=True)
-		super().embed_in(embed)
+		Entity.embed_in(self, embed)
 		if trait_emojis or ptrait_emojis:
 			v = "".join(mult_emojis) + " vs. " + "".join(trait_emojis)
 			if ptrait_emojis: v += " | " + "".join(ptrait_emojis)
@@ -29,16 +26,9 @@ class Form(models.Form, Entity, Embeddable):
 		return embed
 
 
-class Cat(models.Cat, Embeddable):
-	form_base: Form = None
-	form_evolved: Form = None
-	form_true: Form = None
-	form_ultra: Form = None
-
-	def __init__(self, cat: models.Cat):
-		super().__init__(**vars(cat))
-
-	def embed_in(self, embed: discord.Embed) -> discord.Embed:
+class Cat:
+	@staticmethod
+	def embed_in(self: models.Cat, embed: discord.Embed) -> discord.Embed:
 		embed.add_field(name="Rarity - Unlock Method",
 										value=f"{Rarity(self.rarity).label} - {UnlockMethod(self.unlock_method).label}")
 

@@ -1,13 +1,12 @@
-import json
 from datetime import datetime as dt
 
 import discord
+import msgspec.json
 from discord.ext import commands
 
 from catbot import embeds
 from commons import idx
 from commons.models import GachaSchedule, datespan
-from commons.models.lookup import object_hook_ability
 
 
 class EventCog(commands.Cog):
@@ -25,7 +24,7 @@ class EventCog(commands.Cog):
 		gacha = idx.gacha[target[0]]
 		title = f"Gacha {gacha.code}{' (inactive)' if (gacha.category != 'N' and not gacha.enabled) else ''}"
 		embed = discord.Embed(colour=discord.Colour.dark_green(), title=title)
-		embeds.Gacha(gacha).embed_in(embed)
+		embeds.Gacha.embed_in(gacha, embed)
 		await ctx.send(embed=embed)
 
 	@commands.command(
@@ -36,7 +35,7 @@ class EventCog(commands.Cog):
 	async def schedule_gacha(self, ctx):
 		txt = "**Gacha Schedule**\n```\n"
 		with open("data/db/schedule_gacha.json") as fl:
-			schedules: list[GachaSchedule] = json.load(fl, object_hook=object_hook_ability)
+			schedules: list[GachaSchedule] = msgspec.json.decode(fl.read(), type=list[GachaSchedule])
 		for schedule in schedules:
 			if (dt.now() - schedule.time_span[0]).days > 60: continue
 			gacha = idx.gacha.get(schedule.gacha_id)
