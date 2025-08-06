@@ -3,7 +3,7 @@ import discord
 from commons import models
 from commons.models import Rarity, UnlockMethod
 
-from .. import utils
+from .. import utils as utils_
 from ..utils import emoji_by_name
 from .entity import Entity
 
@@ -12,7 +12,7 @@ class Form:
 	@staticmethod
 	def embed_in(self: models.Form, embed: discord.Embed) -> discord.Embed:
 		trait_emojis = [emoji_by_name(f'trait_{trait}') for trait in self.traits]
-		ptrait_emojis = [emoji_by_name(f'ptrait_{ptrait}') for ptrait in self.ptraits]
+		ptrait_emojis = [emoji_by_name(f'ptrait_{ptrait.name}') for ptrait in self.ptraits]
 		mult_emojis = [emoji_by_name(f'mult_{mult}') for mult in self.mults]
 		embed.add_field(name="Cost - Cooldown",
 										value=f'{self.cost:,} - '
@@ -43,7 +43,7 @@ class Cat:
 				txt += "\n"
 				reqtext = []
 				for req in self.tf_reqs:
-					reqtext += [f"{emoji_by_name(utils.item_icons[req[0]])}x{req[1]}"]
+					reqtext += [f"{emoji_by_name(utils_.item_icons[req[0]])}x{req[1]}"]
 				txt += " | ".join(reqtext)
 			embed.add_field(name="True Form", value=txt, inline=False)
 
@@ -55,7 +55,7 @@ class Cat:
 				txt += "\n"
 				reqtext = []
 				for req in self.uf_reqs:
-					reqtext += [f"{emoji_by_name(utils.item_icons[req[0]])}x{req[1]}"]
+					reqtext += [f"{emoji_by_name(utils_.item_icons[req[0]])}x{req[1]}"]
 				txt += " | ".join(reqtext)
 			embed.add_field(name="Ultra Form", value=txt, inline=False)
 		return embed

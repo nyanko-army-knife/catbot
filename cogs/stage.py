@@ -104,8 +104,8 @@ class StageCog(commands.Cog):
 		stg = idx.stages.lookup(args.stage)
 		if args.id_ is not None:
 			try:
-				cat, map_, stg = args.id_
-				stg = idx.categories[args.id_[0]].maps[args.id_[1]].stages[args.id_[2]]
+				cat, map_, stg_ = args.id_
+				stg = idx.categories[cat].maps[map_].stages[stg_]
 			except KeyError:
 				pass
 

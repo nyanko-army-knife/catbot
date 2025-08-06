@@ -2,8 +2,10 @@ from typing import Any
 
 import discord
 from discord.ext import commands
-from discord.ext.commands import Command, FlagConverter
+from discord.ext.commands import Command
 from typing_extensions import override
+
+from catbot.utils import ArgparseConverter
 
 
 class CustomHelpCommand(commands.DefaultHelpCommand):
@@ -45,7 +47,7 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
 		arguments = command.clean_params.values()
 		if not arguments: return ""
 		arg = next(iter(arguments), None)
-		if not issubclass(arg.annotation, FlagConverter):
+		if not issubclass(arg.annotation, ArgparseConverter):
 			return ""
 		arguments = list(arg.annotation.get_flags().values())
 

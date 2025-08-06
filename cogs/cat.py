@@ -1,9 +1,9 @@
-import typing
-
 import discord
 from discord.ext import commands
 
+import catbot.utils as utils
 from catbot import embeds
+from catbot.utils import DoubleDefault
 from commons import idx
 from commons.models import Cat
 
@@ -26,19 +26,20 @@ def get_cat(form_name: str) -> tuple[Cat, int, float]:
 
 
 class CatIDConverter(commands.Converter):
-	async def convert(self, ctx: commands.Context, argument: str):
+	async def convert(self, ctx: commands.Context, argument: str) -> Cat:
 		return idx.units.get(int(argument))
 
 
-class CSFlags(commands.FlagConverter, delimiter=' ', prefix='-', case_insensitive=True):
+class CSFlags(utils.ArgparseConverter):
 	form_name: str = commands.flag(name='name', positional=True, description="unit name", default="")
 	cat: CatIDConverter = commands.flag(name='id', default=None,
 																			description="ID of unit, unit name is ignored when this is provided")
-	level: int = commands.flag(name='level', aliases=['l', 'lv'], default=50, max_args=1, description="unit level")
+	level: utils.ForceInt = commands.flag(name='level', aliases=['lvl', 'lv', 'l'], default=50, max_args=1,
+																				description="unit level")
 	to_form: int = commands.flag(name='form', aliases=['f'], default=-1, max_args=1,
 															 description="Unit Form (0 = first, 1 = evolved, 2 = true, 3 = ultra)")
-	talents: typing.Tuple[int, ...] = commands.flag(name='talents', aliases=['t'], default=tuple(),
-																									description="Talents, send -1 to max all")
+	talents: list[int] = commands.flag(name='talents', aliases=['t'], default=DoubleDefault([], [-1]),
+																		 description="Talents, send -1 to max all")
 	verbose: bool = commands.flag(name='verbose', aliases=['v'], default=False, description="verbose (display summon)")
 
 
@@ -61,7 +62,7 @@ class CatCog(commands.Cog):
 	async def catstats(self, ctx: discord.ext.commands.Context, *, flags: CSFlags):
 		form_id: int = -1
 		if flags.cat:
-			cat_, confidence = flags.cat, 100
+			cat_, confidence = flags.cat, 100.0
 		elif flags.form_name:
 			cat_, form_id, confidence = get_cat(flags.form_name)
 		else:
@@ -77,7 +78,7 @@ class CatCog(commands.Cog):
 
 		if flags.talents:
 			talents = idx.talents[cat_.id_]
-			levels = [10] * 10 if flags.talents == (-1,) else flags.talents
+			levels = [10] * 10 if flags.talents == [-1] else flags.talents
 			for t, talent_level in zip(talents, levels):
 				if talent_level > 0:
 					form = t.apply_level_to(talent_level, form)
@@ -98,7 +99,7 @@ class CatCog(commands.Cog):
 
 		if embed.footer.text:
 			spirit = await CatIDConverter().convert(ctx, ''.join(x for x in embed.footer.text if x.isnumeric()))
-			flags.cat, flags.form, flags.to_form = spirit, "", 0
+			flags.cat, flags.to_form = spirit, 0
 			await ctx.invoke(self.catstats, flags=flags)
 
 	@commands.command(
