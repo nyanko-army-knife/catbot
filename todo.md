@@ -1,22 +1,22 @@
 # problem list
 
--[x] jagando name displayed in japanese
--[A] eva02 doesnt fucking work
--[x] kaguya displays summer kaguya
+-[ ] buttons to see talents and shi
+-[ ] fucking balrog i hate balrog so much omg
+-[ ] single stage maps
+-[ ] story mode stages (people use the bot for story mode stages???)
+-[ ] throw an error if it's a really bad match
 -[x] (- lv60) (-lv60) weird spacing nonsense
 -[x] -t
--[ ] single stage maps
--[A] citc -> mola
--[A] dkasli -> kasli
+-[x] ;si Tower of the time lord
+-[x] ;si journey to talent valkyrie cat’s trial
+-[x] `-lvl` as a level alias
+-[x] case sensitive cs
+-[x] cat job > mohawk
+-[x] citc -> mola
+-[x] dark iz
+-[x] dkasli -> kasli
+-[x] eva02 doesnt fucking work
+-[x] jagando name displayed in japanese
+-[x] kaguya displays summer kaguya
 -[x] truck gives some kr name??
 -[x] ultra kaguya gives third form???
--[ ] buttons to see talents and shi
--[A] fucking balrog i hate balrog so much omg
--[ ] throw an error if it's a really bad match
--[x] ;si Tower of the time lord
--[ ] story mode stages (people use the bot for story mode stages???)
--[x] `-lvl` as a level alias
--[x] ;si journey to talent valkyrie cat’s trial
--[x] case sensitive cs
--[A] dark iz
--[A] cat job > mohawk

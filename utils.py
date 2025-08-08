@@ -8,7 +8,6 @@ from typing import Iterable, Self
 
 from discord.ext import commands
 from discord.ext.commands import Context, Converter
-from discord.ext.commands._types import BotT
 
 emojis = {}
 item_icons = {}
@@ -60,13 +59,15 @@ class ArgparseConverter(commands.FlagConverter):
 		parser = ArgumentParser()
 		for _, flag in cls.get_flags().items():
 			if flag.positional:
-				parser.add_argument(flag.name, type=flag.annotation, nargs="+")
+				parser.add_argument(flag.name, type=flag.annotation, nargs="*", default="")
 				continue
 
-			default_val = flag.default if flag.default or isinstance(flag.annotation(), Converter) else flag.annotation()
+			default_val = flag.default
+			annotation = flag.annotation
+			if isinstance(flag.annotation(), Converter):
+				annotation = str
 			const = None
 			nargs = "?"
-			annotation = flag.annotation
 			if isinstance(default_val, DoubleDefault):
 				default_val, const = default_val.first, default_val.second
 			if isinstance(flag.annotation, Iterable):
@@ -78,7 +79,7 @@ class ArgparseConverter(commands.FlagConverter):
 		return parser
 
 	@classmethod
-	async def convert(cls, ctx: Context[BotT], argument: str) -> Self:
+	async def convert(cls, ctx: Context, argument: str) -> Self:
 		parser = cls.parser_init()
 		split_args = shlex.split(argument)
 
