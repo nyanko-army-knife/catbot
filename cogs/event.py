@@ -10,7 +10,7 @@ from commons.models import GachaSchedule, datespan
 
 
 class EventCog(commands.Cog):
-	qualified_name = "enemies"
+	qualified_name = "events"
 
 	def __init__(self, bot):
 		self.bot = bot
