@@ -40,6 +40,7 @@ async def on_ready():
 	await bot.add_cog(cogs.EnemyCog(bot))
 	await bot.add_cog(cogs.EventCog(bot))
 	await bot.add_cog(cogs.StageCog(bot))
+	await bot.add_cog(cogs.MiscCog(bot))
 
 
 if __name__ == "__main__":
