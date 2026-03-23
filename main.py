@@ -11,7 +11,7 @@ from catbot.help import CustomHelpCommand
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot(command_prefix=';', intents=intents, help_command=CustomHelpCommand())
+bot = commands.Bot(command_prefix=[';', 'p!', '!'], intents=intents, help_command=CustomHelpCommand())
 permissions = {}
 
 

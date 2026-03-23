@@ -25,7 +25,7 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
 	def get_command_signature(self, command: Command):
 		name = command.name
 		if command.aliases:
-			name += f' [/{'/'.join(command.aliases)}]'
+			name += f' [or: {', '.join(command.aliases)}]'
 
 		return name
 
@@ -55,7 +55,7 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
 		entry = ""
 		for argument in arguments:
 			entry += (f'**{argument.name}** '
-								f'{f'**[/{'/'.join(argument.aliases)}]** ' if argument.aliases else ''} '
+								f'{f'**[or: {','.join(argument.aliases)}]** ' if argument.aliases else ''} '
 								f' --- {argument.description or self.default_argument_description}')
 			if argument.default is not None:
 				entry += f' (default: {argument.default})'
