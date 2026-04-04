@@ -5,6 +5,7 @@ import msgspec.json
 from discord.ext import commands
 
 from catbot import embeds
+from catbot.utils import render
 from commons import idx
 from commons.models import GachaSchedule, datespan
 
@@ -33,18 +34,20 @@ class EventCog(commands.Cog):
 		help=";gacha E039\n"
 	)
 	async def schedule_gacha(self, ctx):
-		txt = "**Gacha Schedule**\n```\n"
+		txt = t"**Gacha Schedule**\n```\n"
 		with open("data/db/schedule_gacha.json") as fl:
 			schedules: list[GachaSchedule] = msgspec.json.decode(fl.read(), type=list[GachaSchedule])
 		for schedule in schedules:
-			if (dt.now() - schedule.time_span[0]).days > 60: continue
+			if (dt.now() - schedule.time_span[0]).days > 60 or (dt.now() - schedule.time_span[1]).days > 0: continue
 			gacha = idx.gacha.get(schedule.gacha_id)
-			txt += f"{datespan(schedule.time_span)} ({schedule.gacha_id}) {gacha.series_name}"
-			if schedule.modifiers:
-				txt += f" [{'|'.join(schedule.modifiers)}]"
+			if gacha is None:
+				continue
+			txt += t"[{datespan(schedule.time_span)}]"
+			if schedule.modifiers - {'P'}:
+				txt += t" [{'|'.join(schedule.modifiers - {'P'})}]"
 			if gacha.extras:
-				txt += f" [{'|'.join(gacha.extras)}]"
-			txt += "\n"
-		txt += "```\n"
-		txt += "G : Guaranteed | GR : Grandon | N : Neneko Gang | R : Reinforcement | P : Platinum Shard | S : Step Up\n"
-		await ctx.send(txt)
+				txt += t" [{'|'.join(gacha.extras)}]"
+			txt += t" {gacha.series_name}\n"
+		txt += t"```\n"
+		txt += t"G : Guaranteed | GR : Grandon | N : Neneko Gang | R : Reinforcement | S : Step Up | U : raised uber rate\n"
+		await ctx.send(render(txt))

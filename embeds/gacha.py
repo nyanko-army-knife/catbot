@@ -19,7 +19,7 @@ class Gacha:
 				txt, rarity = [], Rarity.NORMAL
 				for unit in group[1]:
 					rarity = unit.rarity
-					mult = int(self.units[str(unit.id_ - 1)])
+					mult = int(self.units[unit.id_ - 1])
 					txt += [f"{unit.form_base.name}" + (f"X {mult}" if mult > 1 else "")]
 				embed.add_field(name=f"units - {rarity}", value=", ".join(txt), inline=False)
 		if self.blue_orbs:

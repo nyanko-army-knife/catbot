@@ -4,6 +4,7 @@ import discord
 from discord.ext import commands
 
 from catbot import embeds
+from catbot.utils import Embed
 from commons import idx
 
 
@@ -30,13 +31,16 @@ class EnemyCog(commands.Cog):
 		enem = idx.enemies.lookup(flags.name)
 		enem = enem.to_mag(*flags.mag[:2])
 
-		embed = discord.Embed(colour=discord.Colour.red(), title=f"{enem.name} [{enem.id_}] {flags.mag}%")
+		embed = Embed(colour=discord.Colour.red(), title=f"{enem.name} [{enem.id_}] {flags.mag}%")
 		embeds.Enemy.embed_in(enem, embed)
 
 		fl_id = f'{enem.id_:03}'
-		upload_file = discord.File(f'data/img/enemy/{fl_id}.png', filename=f'{fl_id}.png')
-		embed.set_thumbnail(url=f"attachment://{fl_id}.png")
-		await ctx.send(file=upload_file, embed=embed)
+		try:
+			upload_file = discord.File(f'data/img/enemy/{fl_id}.png', filename=f'{fl_id}.png')
+			embed.set_thumbnail(url=f"attachment://{fl_id}.png")
+			await ctx.send(file=upload_file, embed=embed)
+		except:
+			await ctx.send(embed=embed)
 
 	@commands.command(
 		aliases=['efind', 'ef'],

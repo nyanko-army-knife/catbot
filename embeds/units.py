@@ -1,22 +1,19 @@
-import discord
-
 from commons import models
-from commons.models import Rarity, UnlockMethod
-
-from .. import utils as utils_
-from ..utils import emoji_by_name
+from commons.models import Rarity, UnlockMethod, Duration
 from .entity import Entity
+from .. import utils as utils_
+from ..utils import emoji_by_name, Embed
 
 
 class Form:
 	@staticmethod
-	def embed_in(self: models.Form, embed: discord.Embed) -> discord.Embed:
+	def embed_in(self: models.Form, embed: Embed) -> Embed:
 		trait_emojis = [emoji_by_name(f'trait_{trait}') for trait in self.traits]
 		ptrait_emojis = [emoji_by_name(f'ptrait_{ptrait.name}') for ptrait in self.ptraits]
 		mult_emojis = [emoji_by_name(f'mult_{mult}') for mult in self.mults]
 		embed.add_field(name="Cost - Cooldown",
-										value=f'{self.cost:,} - '
-													f'{self.cooldown:,}f',
+										value=t'{self.cost:,} - '
+													t'{max(self.cooldown, Duration(60)):,}',
 										inline=True)
 		Entity.embed_in(self, embed)
 		if trait_emojis or ptrait_emojis:
@@ -28,7 +25,7 @@ class Form:
 
 class Cat:
 	@staticmethod
-	def embed_in(self: models.Cat, embed: discord.Embed) -> discord.Embed:
+	def embed_in(self: models.Cat, embed: Embed) -> Embed:
 		embed.add_field(name="Rarity - Unlock Method",
 										value=f"{Rarity(self.rarity).label} - {UnlockMethod(self.unlock_method).label}")
 

@@ -32,14 +32,19 @@ class CatIDConverter(commands.Converter):
 
 class CSFlags(utils.ArgparseConverter):
 	form_name: str = commands.flag(name='name', positional=True, description="unit name", default="")
+
 	cat: CatIDConverter = commands.flag(name='id', default=None,
 																			description="ID of unit, unit name is ignored when this is provided")
+
 	level: utils.ForceInt = commands.flag(name='level', aliases=['lvl', 'lv', 'l'], default=50, max_args=1,
 																				description="unit level")
+
 	to_form: int = commands.flag(name='form', aliases=['f'], default=-1, max_args=1,
 															 description="Unit Form (0 = first, 1 = evolved, 2 = true, 3 = ultra)")
+
 	talents: list[int] = commands.flag(name='talents', aliases=['t'], default=DoubleDefault([], [-1]),
 																		 description="Talents, send -1 to max all")
+
 	verbose: bool = commands.flag(name='verbose', aliases=['v'], default=False, description="verbose (display summon)")
 
 
@@ -54,13 +59,15 @@ class CatCog(commands.Cog):
 		self.bot = bot
 
 	@commands.command(
-		aliases=['cs'],
+		aliases=['cs', 'fs'],
 		description="display stats of cat",
 		help=";cs Lasvoss -f 2\n"
 				 ";cs Akira -f 2 -t -1\n"
 	)
 	async def catstats(self, ctx: discord.ext.commands.Context, *, flags: CSFlags):
+		# PARSE FLAGS
 		form_id: int = -1
+		talents, levels = [], []
 		if flags.cat:
 			cat_, confidence = flags.cat, 100.0
 		elif flags.form_name:
@@ -78,13 +85,20 @@ class CatCog(commands.Cog):
 
 		if flags.talents:
 			talents = idx.talents[cat_.id_]
-			levels = [10] * 10 if flags.talents == [-1] else flags.talents
-			for t, talent_level in zip(talents, levels):
-				if talent_level > 0:
-					form = t.apply_level_to(talent_level, form)
+			levels = [10] * 10 if flags.talents == [-1] else flags.talents + [0] * 10
 
-		embed = discord.Embed(colour=discord.Colour.green(),
-													title=f"{form.name} [{form.id_[0]}-{form.id_[1]}] (Lv. {level})")
+		# MAKE EMBED
+		name = f"{form.name} [{form.id_[0]}-{form.id_[1]}] (Lv. {level})"
+		embed = utils.Embed(colour=discord.Colour.green(), title=name)
+
+		for t, talent_level in zip(talents, levels):
+			f = "Applied Talents: "
+			tlnts = []
+			if talent_level > 0:
+				form = t.apply_level_to(talent_level, form)
+				tlnts += [f'{t.name} [{talent_level}]']
+			embed.set_footer(text=f + ', '.join(tlnts))
+
 		embeds.Form.embed_in(form, embed)
 
 		fl_id = f"{form.id_[0]:03}_{form.id_[1]}"
@@ -97,7 +111,7 @@ class CatCog(commands.Cog):
 
 		await ctx.send(file=upload_file, embed=embed)
 
-		if embed.footer.text:
+		if "summon:" in embed.footer.text:
 			spirit = await CatIDConverter().convert(ctx, ''.join(x for x in embed.footer.text if x.isnumeric()))
 			flags.cat, flags.to_form = spirit, 0
 			await ctx.invoke(self.catstats, flags=flags)

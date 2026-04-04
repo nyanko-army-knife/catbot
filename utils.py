@@ -1,11 +1,14 @@
 import argparse
+import datetime
 import json
 import shlex
 import typing
 from dataclasses import dataclass
 from functools import cache
-from typing import Iterable, Self
+from string.templatelib import Template
+from typing import Iterable, Self, Any
 
+import discord
 from discord.ext import commands
 from discord.ext.commands import Context, Converter
 
@@ -24,6 +27,33 @@ def setup_icons():
 
 def emoji_by_name(name: str):
 	return f'<:{name}:{emojis[name]}>'
+
+
+def render(v: Template) -> str:
+	out = ""
+	for piece in v:
+		if isinstance(piece, str):
+			out += f"{piece!s}"
+		else:
+			if isinstance(piece.value, Template):
+				out += render(piece.value)
+			elif isinstance(piece.value, datetime.datetime):
+				out += f"{piece.value:%b-%d}"
+			else:
+				try:
+					out += render(piece.value.text())
+				except:
+					out += f"{piece.value:{piece.format_spec}}"
+	return out
+
+
+class Embed(discord.Embed):
+	def add_field(self, *, name: Any, value: Any, inline: bool = True) -> Self:
+		out = str(value)
+		if isinstance(value, Template):
+			out = render(value)
+
+		super().add_field(name=name, value=out, inline=inline)
 
 
 @dataclass
