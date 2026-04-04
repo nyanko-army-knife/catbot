@@ -15,7 +15,7 @@ class Entity:
 		embed.add_field(name="HP - KB Count", value=f'{self.hp:,} - {self.kb}', inline=True)
 
 		if self.breakup.hit_1 is not None:
-			embed.add_field(name="Timings", value=self.breakup, inline=True)
+			embed.add_field(name="Timings", value=t"{self.breakup}", inline=True)
 		else:
 			embed.add_field(name="Timings",
 											value=t'↑{self.breakup.hit_0.foreswing} / ↓{self.breakup.backswing} / ⏲{self.breakup.tba}',
@@ -39,7 +39,7 @@ class Entity:
 			additions += reduce(add, [t"— {x}\n" for x in self.extensions])
 		if self.abilities:
 			additions += reduce(add, [t"— {x}\n" for x in self.abilities])
-		if additions:
+		if additions.interpolations:
 			embed.add_field(name="Abilities", value=additions, inline=False)
 		if self.passives:
 			Passives.embed_in(self.passives, embed)

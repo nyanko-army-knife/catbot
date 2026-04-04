@@ -111,7 +111,7 @@ class CatCog(commands.Cog):
 
 		await ctx.send(file=upload_file, embed=embed)
 
-		if "summon:" in embed.footer.text:
+		if embed.footer and "summon:" in embed.footer.text:
 			spirit = await CatIDConverter().convert(ctx, ''.join(x for x in embed.footer.text if x.isnumeric()))
 			flags.cat, flags.to_form = spirit, 0
 			await ctx.invoke(self.catstats, flags=flags)
