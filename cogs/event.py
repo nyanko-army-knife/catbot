@@ -38,7 +38,8 @@ class EventCog(commands.Cog):
 		with open("data/db/schedule_gacha.json") as fl:
 			schedules: list[GachaSchedule] = msgspec.json.decode(fl.read(), type=list[GachaSchedule])
 		for schedule in schedules:
-			if (dt.now() - schedule.time_span[0]).days > 60 or (dt.now() - schedule.time_span[1]).days > 0: continue
+			if abs((dt.now() - schedule.time_span[0]).days) > 60 or abs(
+				(dt.now() - schedule.time_span[1]).days) > 60: continue
 			gacha = idx.gacha.get(schedule.gacha_id)
 			if gacha is None:
 				continue

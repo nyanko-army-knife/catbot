@@ -88,7 +88,7 @@ class CatCog(commands.Cog):
 			levels = [10] * 10 if flags.talents == [-1] else flags.talents + [0] * 10
 
 		# MAKE EMBED
-		name = f"{form.name} [{form.id_[0]}-{form.id_[1]}] (Lv. {level})"
+		name = f"{form.name} [{form.id_[0]}-{form.id_[1]}] (Lv. {level}) - {cat_.rarity.label}"
 		embed = utils.Embed(colour=discord.Colour.green(), title=name)
 
 		for t, talent_level in zip(talents, levels):
