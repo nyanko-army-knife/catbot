@@ -9,7 +9,7 @@ from commons import idx
 
 
 class ESFlags(commands.FlagConverter, delimiter=' ', prefix='-', case_insensitive=True):
-	name: str = commands.flag(name='name', description="Enemy Name", positional=True, default='')
+	enemy: embeds.Enemy = commands.flag(name='name', description="Enemy Name", positional=True, default='')
 	mag: typing.Tuple[int, ...] = commands.flag(name='mag', aliases=['m'], default=(100, 100), max_args=1,
 																							description="Magnification (HP, Atk)")
 
@@ -28,7 +28,7 @@ class EnemyCog(commands.Cog):
 				 ";es baron seal -m 10000 1000\n"
 	)
 	async def enemy(self, ctx, *, flags: ESFlags):
-		enem = idx.enemies.lookup(flags.name)
+		enem = flags.enemy
 		enem = enem.to_mag(*flags.mag[:2])
 
 		embed = Embed(colour=discord.Colour.red(), title=f"{enem.name} [{enem.id_}] {flags.mag}%")

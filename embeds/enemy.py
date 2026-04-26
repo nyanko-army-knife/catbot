@@ -1,11 +1,20 @@
 import discord
+from discord.ext import commands
 
+from commons import idx
 from commons.models import enemy
 from .entity import Entity
 from ..utils import emoji_by_name, Embed
 
 
 class Enemy:
+	@classmethod
+	async def convert(cls, ctx: commands.Context, argument: str) -> Enemy:
+		if argument.isnumeric():
+			return idx.enemies.get(int(argument))
+		else:
+			return idx.enemies.lookup(argument)
+
 	@staticmethod
 	def embed_in(self: enemy.Enemy, embed: Embed) -> discord.Embed:
 		trait_emojis = [emoji_by_name(f'trait_{trait}') for trait in self.traits]

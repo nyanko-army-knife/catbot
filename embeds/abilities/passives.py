@@ -19,7 +19,7 @@ class Passives:
 			v += reduce(add, (t"— {x}\n" for x in self.defensives))
 		if self.offensives:
 			v += reduce(add, (t"— {x}\n" for x in self.offensives))
-		if v:
+		if v.interpolations:
 			embed.add_field(name='Passives', value=v, inline=False)
 
 		for offensive in self.offensives:

@@ -1,4 +1,6 @@
-from commons import models
+from discord.ext import commands
+
+from commons import models, idx
 from commons.models import Rarity, UnlockMethod, Duration
 from .entity import Entity
 from .. import utils as utils_
@@ -24,6 +26,10 @@ class Form:
 
 
 class Cat:
+	@classmethod
+	async def convert(cls, ctx: commands.Context, argument: str) -> Cat:
+		return idx.units.get(int(argument))
+
 	@staticmethod
 	def embed_in(self: models.Cat, embed: Embed) -> Embed:
 		embed.add_field(name="Rarity - Unlock Method",

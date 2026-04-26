@@ -8,10 +8,12 @@ from catbot import embeds
 from catbot.utils import render
 from commons import idx
 from commons.models import GachaSchedule, datespan
+from commons.models import ItemSchedule
+from commons.utils import msg
 
 
 class EventCog(commands.Cog):
-	qualified_name = "enemies"
+	qualified_name = "events"
 
 	def __init__(self, bot):
 		self.bot = bot
@@ -31,15 +33,20 @@ class EventCog(commands.Cog):
 	@commands.command(
 		aliases=['vgs', 'sgacha'],
 		description="display gacha schedule",
-		help=";gacha E039\n"
 	)
 	async def schedule_gacha(self, ctx):
-		txt = t"**Gacha Schedule**\n```\n"
+		def try_get_name(id_) -> str:
+			gcha = idx.gacha.get(id_)
+			return "" if gcha is None else gcha.series_name
+
 		with open("data/db/schedule_gacha.json") as fl:
 			schedules: list[GachaSchedule] = msgspec.json.decode(fl.read(), type=list[GachaSchedule])
+			schedules.sort(key=lambda schedule: (schedule.time_span[0], try_get_name(schedule.gacha_id)))
+
+		txt = t"**Gacha Schedule**\n```\n"
 		for schedule in schedules:
 			if abs((dt.now() - schedule.time_span[0]).days) > 60 or abs(
-				(dt.now() - schedule.time_span[1]).days) > 60: continue
+							(dt.now() - schedule.time_span[1]).days) > 60: continue
 			gacha = idx.gacha.get(schedule.gacha_id)
 			if gacha is None:
 				continue
@@ -50,5 +57,41 @@ class EventCog(commands.Cog):
 				txt += t" [{'|'.join(gacha.extras)}]"
 			txt += t" {gacha.series_name}\n"
 		txt += t"```\n"
-		txt += t"G : Guaranteed | GR : Grandon | N : Neneko Gang | R : Reinforcement | S : Step Up | U : raised uber rate\n"
+		txt += t"G : Guaranteed | I: Item (typically Lucky Ticket) | S : Step Up | U : raised uber rate\n"
+		await ctx.send(render(txt))
+
+	@commands.command(
+		aliases=['vis', 'sitem'],
+		description="display item schedule",
+	)
+	async def schedule_item(self, ctx):
+		txt = t"**Item Schedule**\n```\n"
+		with open("data/db/schedule_item.json") as fl:
+			schedules: list[ItemSchedule] = msg.dec(list[ItemSchedule]).decode(fl.read())
+
+		for schedule in schedules:
+			if (dt.now() - schedule.time_span[0]).days > 0: continue  # or abs(
+			# (dt.now() - schedule.time_span[1]).days) > 60: continue
+			txt += t"[{datespan(schedule.time_span)}] "
+			if schedule.item_id == 301:
+				txt += t"Reset:: 11 roll discount\n"
+			elif schedule.item_id == 302:
+				txt += t"Reset:: 1 roll discount\n"
+			elif 800 <= schedule.item_id < 900:
+				txt += t"Sale :: {idx.sales[schedule.item_id]}\n"
+			elif 900 <= schedule.item_id < 1_000 or 35_000 <= schedule.item_id < 36_000:
+				txt += t"Stamp:: {idx.stamps[schedule.item_id]}\n"
+			elif 11_000 <= schedule.item_id < 12_000:
+				txt += t"Dojo :: {idx.categories['R'].maps[schedule.item_id % 11_000].stages[0].name}\n"
+			elif 33_000 <= schedule.item_id < 34_000:
+				txt += t"Event:: Labyrinth\n"
+			else:
+				item_name = schedule.item_id
+				try:
+					item_name = idx.items_by_server_id[schedule.item_id].name
+				except KeyError:
+					pass
+				txt += t"Item :: {item_name} x {schedule.item_qty} - {schedule.message.split('<br>')[0]}\n"
+
+		txt += t"```\n"
 		await ctx.send(render(txt))
