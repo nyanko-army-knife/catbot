@@ -93,7 +93,8 @@ class CatCog(commands.Cog):
 			if talent_level > 0 and not (level < 60 and t.is_ultra):
 				form = t.apply_level_to(talent_level, form)
 				tlnts += [f'{t.name} [{talent_level}]']
-		embed.set_footer(text=f + ', '.join(tlnts))
+		if tlnts:
+			embed.set_footer(text=f + ', '.join(tlnts))
 
 		embeds.Form.embed_in(form, embed)
 
