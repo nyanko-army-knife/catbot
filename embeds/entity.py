@@ -10,9 +10,9 @@ from .abilities import Passives
 class Entity:
 	@staticmethod
 	def embed_in(self: models.Entity, embed: discord.Embed) -> discord.Embed:
+		embed.add_field(name="HP - KB Count", value=f'{self.hp:,} - {self.kb}', inline=True)
 		embed.add_field(name="Atk (DPS)", value=f'{self.atk:,} ({30 * self.atk / self.breakup.cd_effective:,.2f})',
 										inline=True)
-		embed.add_field(name="HP - KB Count", value=f'{self.hp:,} - {self.kb}', inline=True)
 
 		if self.breakup.hit_1 is not None:
 			embed.add_field(name="Timings", value=t"{self.breakup}", inline=True)

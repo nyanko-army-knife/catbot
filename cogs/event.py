@@ -7,9 +7,26 @@ from discord.ext import commands
 from catbot import embeds
 from catbot.utils import render
 from commons import idx
-from commons.models import GachaSchedule, datespan
+from commons.models import GachaSchedule, datespan, SaleSchedule
 from commons.models import ItemSchedule
 from commons.utils import msg
+
+SERIES = {
+	1: 'S',
+	2: 'C',
+	4: 'EX',
+	6: 'T',
+	7: 'V',
+	9: 'N',
+	11: 'R',
+	12: 'M',
+	16: 'D',
+	24: 'A',
+	25: 'H',
+	27: 'CA',
+	33: 'L',
+	36: 'SR',
+}
 
 
 class EventCog(commands.Cog):
@@ -93,5 +110,41 @@ class EventCog(commands.Cog):
 					pass
 				txt += t"Item :: {item_name} x {schedule.item_qty} - {schedule.message.split('<br>')[0]}\n"
 
+		txt += t"```\n"
+		await ctx.send(render(txt))
+
+	@commands.command(
+		aliases=['vss'],
+		description="display stage schedule",
+	)
+	async def schedule_sale(self, ctx):
+		with open("data/db/schedule_sale.json") as fl:
+			schedules: list[SaleSchedule] = msgspec.json.decode(fl.read(), type=list[SaleSchedule])
+
+		def get_stage_name(i: int) -> str:
+			match i // 1000:
+				case 16:
+					return 'Legend Quest'
+				case 18:
+					return 'Slots'
+				case 9:
+					return 'Mission: '
+				case 5:
+					return 'Gamatoto'
+				case _:
+					try:
+						return idx.categories.get(SERIES[i // 1_000]).maps[i % 1000].name
+					except AttributeError:
+						return 'Unknown'
+					except IndexError:
+						return 'Unknown'
+
+		txt = t"**Stage Schedule**\n```\n"
+		for schedule in schedules:
+			if (dt.now() - schedule.time_span[0]).days > 5 or abs(
+							(dt.now() - schedule.time_span[1]).days) > 60: continue
+			txt += t"[{datespan(schedule.time_span)}]"
+			txt += t" [{'|'.join(map(get_stage_name, schedule.events))}]"
+			txt += t"\n"
 		txt += t"```\n"
 		await ctx.send(render(txt))
