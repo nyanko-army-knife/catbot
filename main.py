@@ -4,7 +4,8 @@ import discord
 from discord.ext import commands
 
 import commons.idx as idx
-from . import cogs, utils
+from catbot import utils
+from . import cogs
 from .help import CustomHelpCommand
 
 intents = discord.Intents.default()
