@@ -58,7 +58,7 @@ class EventCog(commands.Cog):
 			gcha = idx.gacha.get(id_)
 			return "" if gcha is None else gcha.series_name
 
-		with open("data/db/schedule_gacha.json") as fl:
+		with open("data/db_en/schedule_gacha.json") as fl:
 			schedules: list[GachaSchedule] = msgspec.json.decode(fl.read(), type=list[GachaSchedule])
 			schedules.sort(key=lambda schedule: (schedule.time_span[0], try_get_name(schedule.gacha_id)))
 
@@ -86,7 +86,7 @@ class EventCog(commands.Cog):
 	)
 	async def schedule_item(self, ctx):
 		txt = t"**Item Schedule**\n```\n"
-		with open("data/db/schedule_item.json") as fl:
+		with open("data/db_en/schedule_item.json") as fl:
 			schedules: list[ItemSchedule] = msg.dec(list[ItemSchedule]).decode(fl.read())
 
 		for schedule in schedules:
@@ -121,7 +121,7 @@ class EventCog(commands.Cog):
 		description="display stage schedule",
 	)
 	async def schedule_sale(self, ctx):
-		with open("data/db/schedule_sale.json") as fl:
+		with open("data/db_en/schedule_sale.json") as fl:
 			schedules: list[SaleSchedule] = msgspec.json.decode(fl.read(), type=list[SaleSchedule])
 
 		def get_stage_name(i: int) -> str:
