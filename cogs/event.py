@@ -1,10 +1,12 @@
+import os
 from datetime import datetime as dt
 
 import discord
 import msgspec.json
+import requests
 from discord.ext import commands
 
-from catbot import embeds
+from catbot import embeds, utils
 from catbot.utils import render
 from commons import idx
 from commons.models import GachaSchedule, datespan, SaleSchedule
@@ -62,8 +64,9 @@ class EventCog(commands.Cog):
 
 		txt = t"**Gacha Schedule**\n```\n"
 		for schedule in schedules:
-			if abs((dt.now() - schedule.time_span[0]).days) > 60 or abs(
-							(dt.now() - schedule.time_span[1]).days) > 60: continue
+			if (dt.now() - schedule.time_span[0]).days > 5: continue
+			# if abs((dt.now() - schedule.time_span[0]).days) > 60 or abs(
+			# 				(dt.now() - schedule.time_span[1]).days) > 60: continue
 			gacha = idx.gacha.get(schedule.gacha_id)
 			if gacha is None:
 				continue
@@ -87,7 +90,7 @@ class EventCog(commands.Cog):
 			schedules: list[ItemSchedule] = msg.dec(list[ItemSchedule]).decode(fl.read())
 
 		for schedule in schedules:
-			if (dt.now() - schedule.time_span[0]).days > 0: continue  # or abs(
+			if (dt.now() - schedule.time_span[0]).days > 5: continue  # or abs(
 			# (dt.now() - schedule.time_span[1]).days) > 60: continue
 			txt += t"[{datespan(schedule.time_span)}] "
 			if schedule.item_id == 301:
@@ -114,7 +117,7 @@ class EventCog(commands.Cog):
 		await ctx.send(render(txt))
 
 	@commands.command(
-		aliases=['vss'],
+		aliases=['vss', 'ssale'],
 		description="display stage schedule",
 	)
 	async def schedule_sale(self, ctx):
@@ -143,8 +146,49 @@ class EventCog(commands.Cog):
 		for schedule in schedules:
 			if (dt.now() - schedule.time_span[0]).days > 5 or abs(
 							(dt.now() - schedule.time_span[1]).days) > 60: continue
-			txt += t"[{datespan(schedule.time_span)}]"
-			txt += t" [{'|'.join(map(get_stage_name, schedule.events))}]"
-			txt += t"\n"
+			eventnames = '|'.join(map(get_stage_name, schedule.events))
+			if 'Mission' in eventnames or 'Gamatoto' in eventnames:
+				continue
+			txt += t"[{datespan(schedule.time_span)}] {eventnames}\n"
 		txt += t"```\n"
 		await ctx.send(render(txt))
+
+	@commands.command(
+		aliases=['vas', 'sall'],
+		description="display stage schedule",
+	)
+	async def schedule_all(self, ctx):
+		await ctx.invoke(self.schedule_gacha)
+		await ctx.invoke(self.schedule_item)
+		await ctx.invoke(self.schedule_sale)
+
+	@commands.command(
+		aliases=['vu', ],
+		description="updates event data. only works for authorised users",
+	)
+	async def update(self, ctx):
+		role_ids = set(role.id for role in ctx.author.roles)  # type: ignore
+		guild_perms = utils.permissions.get(str(ctx.guild.id))
+		if not guild_perms: return
+		if not (set(guild_perms["admin_roles"]) & role_ids):
+			return
+
+		await ctx.send(trigger_workflow())
+
+
+def trigger_workflow():
+	url = os.getenv("GITHUB_ACTION_URL", "")
+
+	payload = {
+		"ref": "main",
+		"inputs": {}
+	}
+	headers = {
+		"accept": "application/vnd.github+json",
+		"x-github-api-version": "2026-03-10",
+		"authorization": f"Bearer {os.getenv("GITHUB_ACCESS_TOKEN", "")}",
+		"content-type": "application/json"
+	}
+
+	response = requests.post(url, json=payload, headers=headers)
+	return response.json()

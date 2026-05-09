@@ -25,6 +25,15 @@ def setup_icons():
 		item_icons = {int(K): V for K, V in json.load(fl).items()}
 
 
+permissions = {}
+
+
+def setup_perms():
+	global permissions
+	with open("catbot/assets_cache/privileges.json") as fl:
+		permissions = json.load(fl)
+
+
 def emoji_by_name(name: str):
 	return f'<:{name}:{emojis[name]}>'
 

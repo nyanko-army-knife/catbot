@@ -1,10 +1,9 @@
-import json
 import os
 
-import commons.idx as idx
 import discord
 from discord.ext import commands
 
+import commons.idx as idx
 from . import cogs, utils
 from .help import CustomHelpCommand
 
@@ -12,13 +11,6 @@ intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix=[';', 'p!', '!'], intents=intents, help_command=CustomHelpCommand())
-permissions = {}
-
-
-def setup_perms():
-	global permissions
-	with open("catbot/assets_cache/privileges.json") as fl:
-		permissions = json.load(fl)
 
 
 @bot.check
@@ -28,7 +20,7 @@ async def auth(ctx: discord.Message):
 	user_id = ctx.author.id
 	channel_id = ctx.channel.id
 
-	guild_perms = permissions.get(str(ctx.guild.id))  # type: ignore
+	guild_perms = utils.permissions.get(str(ctx.guild.id))  # type: ignore
 	if not guild_perms: return True
 	return (set(guild_perms["roles"]) & role_ids) or (user_id in guild_perms["users"]) or (
 					channel_id in guild_perms["channels"])
@@ -44,6 +36,6 @@ async def on_ready():
 
 if __name__ == "__main__":
 	idx.setup()
-	setup_perms()
+	utils.setup_perms()
 	utils.setup_icons()
 	bot.run(os.getenv("CATBOT_API_KEY", ""))
