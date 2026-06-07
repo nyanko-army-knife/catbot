@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import datetime as dt
 
@@ -12,6 +13,44 @@ from commons import idx
 from commons.models import GachaSchedule, datespan, SaleSchedule
 from commons.models import ItemSchedule
 from commons.utils import msg
+
+with open("data/custom/events.json") as fl:
+	custom_events = json.load(fl)
+
+SERIES = {
+	1: 'S',
+	2: 'C',
+	4: 'EX',
+	6: 'T',
+	7: 'V',
+	9: 'N',
+	11: 'R',
+	12: 'M',
+	16: 'D',
+	24: 'A',
+	25: 'H',
+	27: 'CA',
+	33: 'L',
+	36: 'SR',
+}
+
+
+def get_stage_name(i: int) -> str:
+	match i // 1000:
+		case 8 | 9:
+			return 'Mission: '
+		case 5:
+			return 'Gamatoto'
+		case _:
+			try:
+				if nm := custom_events["events"].get(str(i)):
+					return nm
+				elif nm := custom_events["series"].get(str(i // 1000)):
+					return nm
+				else:
+					return idx.categories.get(SERIES[i // 1_000]).maps[i % 1000].name
+			except AttributeError, IndexError, KeyError:
+				return f'Unknown - {i}'
 
 
 class EventCog(commands.Cog):
@@ -111,7 +150,7 @@ class EventCog(commands.Cog):
 		for schedule in schedules:
 			if (dt.now() - schedule.time_span[0]).days > 5 or abs(
 							(dt.now() - schedule.time_span[1]).days) > 60: continue
-			eventnames = '|'.join(schedule.events)
+			eventnames = '|'.join(map(get_stage_name, schedule.events))
 			if 'Mission' in eventnames or 'Gamatoto' in eventnames:
 				continue
 			txt += t"[{datespan(schedule.time_span)}] {eventnames}\n"
