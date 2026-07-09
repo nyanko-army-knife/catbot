@@ -4,13 +4,13 @@ from operator import attrgetter
 import discord
 
 from commons import idx, models
-from commons.models import Rarity
+from commons.models import Rarity, SERIES
 
 
 class Gacha:
 	@staticmethod
 	def embed_in(self: models.Gacha, embed: discord.Embed) -> discord.Embed:
-		embed.add_field(name="series", value=self.series_id, inline=False)
+		embed.add_field(name="series", value=SERIES[self.series_id], inline=False)
 		if self.chara_id >= 0:
 			embed.add_field(name="chara", value=idx.units.get(self.chara_id), inline=False)
 		if self.units:
@@ -21,7 +21,7 @@ class Gacha:
 					rarity = unit.rarity
 					mult = int(self.units[unit.id_ - 1])
 					txt += [f"{unit.form_base.name}" + (f"X {mult}" if mult > 1 else "")]
-				embed.add_field(name=f"units - {rarity}", value=", ".join(txt), inline=False)
+				embed.add_field(name=f"units - {rarity}", value=(", ".join(txt))[:1024], inline=False)
 		if self.blue_orbs:
 			txt = (f"{orb_id}" + (f"X {mult}" if int(mult) > 1 else "")
 						 for orb_id, mult in self.blue_orbs.items())
