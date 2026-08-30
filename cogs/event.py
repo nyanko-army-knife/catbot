@@ -48,7 +48,7 @@ def get_stage_name(i: int) -> str:
 				elif nm := custom_events["series"].get(str(i // 1000)):
 					return nm
 				else:
-					return idx.categories.get(SERIES[i // 1_000]).maps[i % 1000].name
+					return idx.categories[SERIES[i // 1_000]].maps[i % 1000].name
 			except AttributeError, IndexError, KeyError:
 				return f'Unknown - {i}'
 
@@ -171,7 +171,7 @@ class EventCog(commands.Cog):
 		description="updates event data. only works for authorised users",
 	)
 	async def update(self, ctx):
-		role_ids = set(role.id for role in ctx.author.roles)  # type: ignore
+		role_ids = set(role.id for role in ctx.author.roles)
 		guild_perms = utils.permissions.get(str(ctx.guild.id))
 		if not guild_perms: return
 		if not (set(guild_perms["admin_roles"]) & role_ids):

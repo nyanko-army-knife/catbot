@@ -17,11 +17,11 @@ bot = commands.Bot(command_prefix=[';', 'p!', '!'], intents=intents, help_comman
 @bot.check
 async def auth(ctx: discord.Message):
 	if isinstance(ctx.channel, discord.channel.DMChannel): return False
-	role_ids = set(role.id for role in ctx.author.roles)  # type: ignore
+	role_ids = set(role.id for role in ctx.author.roles)
 	user_id = ctx.author.id
 	channel_id = ctx.channel.id
 
-	guild_perms = utils.permissions.get(str(ctx.guild.id))  # type: ignore
+	guild_perms = utils.permissions.get(str(ctx.guild.id))
 	if not guild_perms: return True
 	return (set(guild_perms["roles"]) & role_ids) or (user_id in guild_perms["users"]) or (
 					channel_id in guild_perms["channels"])

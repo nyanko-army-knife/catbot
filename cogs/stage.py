@@ -32,60 +32,58 @@ class SIFlags(commands.FlagConverter, delimiter=' ', prefix='-', case_insensitiv
 																									 default=None)
 
 
-class StageSelect(discord.ui.Select):
-	def __init__(self, ctx, stages: list[commons.models.Stage], page_num: int):
-		self.ctx: commands.Context = ctx
-		self.stages = {stage.id_[-1]: stage for stage in stages}
-		options = [
-			discord.SelectOption(label=stage.name, value=str(stage.id_[-1]))
-			for stage in stages
-		]
-		super().__init__(placeholder=f"page {page_num}", max_values=1, min_values=1, options=options)
+# class StageSelect(discord.ui.Select):
+# 	def __init__(self, ctx, stages: list[commons.models.Stage], page_num: int):
+# 		self.ctx: commands.Context = ctx
+# 		self.stages = {stage.id_[-1]: stage for stage in stages}
+# 		options = [
+# 			discord.SelectOption(label=stage.name, value=str(stage.id_[-1]))
+# 			for stage in stages
+# 		]
+# 		super().__init__(placeholder=f"page {page_num}", max_values=1, min_values=1, options=options)
 
-	async def callback(self, interaction: discord.Interaction):
-		await interaction.response.defer()
-		await self.ctx.invoke(self.ctx.bot.get_command("si"),
-													args=SIFlags(stage="", id_=self.stages[int(self.values[0])].id_))
-
-
-class MapSelect(discord.ui.Select):
-	def __init__(self, ctx, maps: list[commons.models.Map], page_num: int):
-		self.ctx = ctx
-		self.maps = {map_.id_[-1]: map_ for map_ in maps}
-		options = [
-			discord.SelectOption(label=map_.name, value=str(map_.id_[-1]))
-			for map_ in maps
-		]
-		super().__init__(placeholder=f"page {page_num}", max_values=1, min_values=1, options=options)
-
-	async def callback(self, interaction: discord.Interaction):
-		stage_batches = itertools.batched(self.maps[int(self.values[0])].stages, 25)
-		await interaction.response.send_message(content="choose stage", ephemeral=True, view=SelectorView(
-			StageSelect(self.ctx, batch, i + 1) for i, batch in enumerate(stage_batches))
-																						)
+# 	async def callback(self, interaction: discord.Interaction):
+# 		await interaction.response.defer()
+# 		await self.ctx.invoke(self.ctx.bot.get_command("si"),
+# 													args=SIFlags(stage="", id_=self.stages[int(self.values[0])].id_))
 
 
-class CategorySelect(discord.ui.Select):
-	def __init__(self, ctx):
-		self.ctx = ctx
-		options = [
-			discord.SelectOption(label=cat_name, value=cat)
-			for cat, cat_name in CATEGORIES.items()
-		]
-		super().__init__(placeholder="select category", max_values=1, min_values=1, options=options)
+# class MapSelect(discord.ui.Select):
+# 	def __init__(self, ctx, maps: list[commons.models.Map], page_num: int):
+# 		self.ctx = ctx
+# 		self.maps = {map_.id_[-1]: map_ for map_ in maps}
+# 		options = [
+# 			discord.SelectOption(label=map_.name, value=str(map_.id_[-1]))
+# 			for map_ in maps
+# 		]
+# 		super().__init__(placeholder=f"page {page_num}", max_values=1, min_values=1, options=options)
 
-	async def callback(self, interaction: discord.Interaction):
-		map_batches = itertools.batched(idx.categories[self.values[0]].maps, 25)
-		await interaction.response.send_message(content="choose map", ephemeral=True, view=SelectorView(
-			MapSelect(self.ctx, batch, i + 1) for i, batch in enumerate(map_batches))
-																						)
+# 	async def callback(self, interaction: discord.Interaction):
+# 		stage_batches = itertools.batched(self.maps[int(self.values[0])].stages, 25)
+# 		await interaction.response.send_message(content="choose stage", ephemeral=True, view=SelectorView(
+# 			StageSelect(self.ctx, batch, i + 1) for i, batch in enumerate(stage_batches))
+# 																						)
 
 
-class SelectorView(discord.ui.View):
-	def __init__(self, selectors, timeout=180):
-		super().__init__(timeout=timeout)
-		for selector in selectors:
-			self.add_item(selector)
+# class CategorySelect(discord.ui.Select):
+# 	def __init__(self, ctx):
+# 		self.ctx = ctx
+# 		options = [
+# 			discord.SelectOption(label=cat_name, value=cat)
+# 			for cat, cat_name in CATEGORIES.items()
+# 		]
+# 		super().__init__(placeholder="select category", max_values=1, min_values=1, options=options)
+
+# 	async def callback(self, interaction: discord.Interaction):
+# 		map_batches = itertools.batched(idx.categories[self.values[0]].maps, 25)
+# 		await interaction.response.send_message(content="choose map", ephemeral=True, view=SelectorView(
+# 			MapSelect(self.ctx, batch, i + 1) for i, batch in enumerate(map_batches))
+# 																						)
+# class SelectorView(discord.ui.View):
+# 	def __init__(self, selectors, timeout=180):
+# 		super().__init__(timeout=timeout)
+# 		for selector in selectors:
+# 			self.add_item(selector)
 
 
 class StageCog(commands.Cog):
@@ -114,13 +112,13 @@ class StageCog(commands.Cog):
 		embeds.Stage.embed_in(stg, embed)
 		await ctx.send(embed=embed)
 
-	@commands.command(
-		aliases=['sl', 'isi'],
-		description="interactive stage lookup",
-		help=";sl\n"
-	)
-	async def interactive_stage(self, ctx, *args):
-		await ctx.send("stage lookup", view=SelectorView([CategorySelect(ctx)]))
+	# @commands.command(
+	# 	aliases=['sl', 'isi'],
+	# 	description="interactive stage lookup",
+	# 	help=";sl\n"
+	# )
+	# async def interactive_stage(self, ctx, *args):
+	# 	await ctx.send("stage lookup", view=SelectorView([CategorySelect(ctx)]))
 
 	@commands.command(
 		aliases=['sfind'],

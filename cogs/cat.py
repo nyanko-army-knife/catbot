@@ -1,11 +1,13 @@
+from typing import Optional
+from discord import ui, AllowedMentions, ButtonStyle
 import discord
-from discord.ext import commands
+import discord.ext.commands as commands
 
 import catbot.utils as utils
 from catbot import embeds
-from catbot.utils import DoubleDefault
+from catbot.utils import DoubleDefault, Embed
 from commons import idx
-from commons.models import Cat
+from commons.models import Cat, Form
 from commons.models.talents import Talent
 
 
@@ -48,11 +50,36 @@ class CIFlags(commands.FlagConverter, delimiter=' ', prefix='-', case_insensitiv
 	form_name: str = commands.flag(name='name', positional=True, description="unit name", default="")
 
 
+def make_embed(form: Form, cat_: Cat, level: int, talents: list[Talent], levels: list[int]) -> tuple[Embed, Optional[discord.File]]:
+	name = f"{form.name} [{form.id_[0]}-{form.id_[1]}] (Lv. {level})"
+	embed = utils.Embed(accent_colour=discord.Colour.green()).add_title(name, f"Rarity: {cat_.rarity.label}")
+
+	tlnts = []
+	f = "**Applied Talents:** "
+	for t, talent_level in zip(talents, levels):
+		if talent_level > 0 and not (level < 60 and t.is_ultra):
+			form = t.apply_level_to(talent_level, form)
+			tlnts += [f'{t.name} [{talent_level}]']
+	if tlnts:
+		embed.set_footer(content=f + ', '.join(tlnts))
+
+	embeds.Form.embed_in(form, embed)
+
+	fl_id = f"{form.id_[0]:03}_{form.id_[1]}"
+
+	try:
+		upload_file = discord.File(f'data/img/unit/{fl_id}.png', filename=f'{fl_id}.png')
+		embed.add_thumbnail(upload_file)
+	except FileNotFoundError:
+		upload_file = None
+	return (embed, upload_file)
+
 class CatCog(commands.Cog):
 	qualified_name = "cats"
 
 	def __init__(self, bot):
 		self.bot = bot
+
 
 	@commands.command(
 		aliases=['cs', 'fs'],
@@ -60,11 +87,11 @@ class CatCog(commands.Cog):
 		help=";cs Lasvoss -f 2\n"
 				 ";cs Akira -f 2 -t -1\n"
 	)
-	async def catstats(self, ctx: discord.ext.commands.Context, *, flags: CSFlags):
+	async def catstats(self, ctx: commands.Context[commands.Bot], *, flags: CSFlags):
 		# PARSE FLAGS
 		form_id: int = -1
 		talents, levels = [], []
-		if flags.cat:
+		if isinstance(flags.cat, Cat):
 			cat_, confidence = flags.cat, 100.0
 		elif flags.form_name:
 			cat_, form_id, confidence = get_cat(flags.form_name)
@@ -84,34 +111,63 @@ class CatCog(commands.Cog):
 			levels = [10] * 10 if flags.talents == [-1] else flags.talents + [0] * 10
 
 		# MAKE EMBED
-		name = f"{form.name} [{form.id_[0]}-{form.id_[1]}] (Lv. {level}) - {cat_.rarity.label}"
-		embed = utils.Embed(colour=discord.Colour.green(), title=name)
+		embed, upload_file = make_embed(form, cat_, level, talents, levels)
+		view = embed.render()
 
-		tlnts = []
-		f = "Applied Talents: "
-		for t, talent_level in zip(talents, levels):
-			if talent_level > 0 and not (level < 60 and t.is_ultra):
-				form = t.apply_level_to(talent_level, form)
-				tlnts += [f'{t.name} [{talent_level}]']
-		if tlnts:
-			embed.set_footer(text=f + ', '.join(tlnts))
 
-		embeds.Form.embed_in(form, embed)
+		if confidence < 95:
+			(_quick, options) = idx.forms.lookup_debug(flags.form_name)
+			form_names = set(idx.forms.lookup_dict[key.name].name for key in options)
+			form_names = [n for n in form_names if n != form.name]
+			class Dropdown(discord.ui.Select):
+				def __init__(self):
+					options=[discord.SelectOption(label=o) for o in form_names]
+					super().__init__(placeholder='wanted something else?', min_values=1, max_values=1, options=options)
+				async def callback(self, interaction: discord.Interaction[commands.Bot]):
+					cat_, form_id, _confidence = get_cat(self.values[0])
+					embed, upload_file = make_embed(cat_.forms()[form_id], cat_, level, [], [])
+					view = embed.render()
+					await interaction.response.send_message(view=view, files=[upload_file])  # ty: ignore[no-matching-overload]
+			view.add_item(ui.ActionRow(Dropdown()))
 
-		fl_id = f"{form.id_[0]:03}_{form.id_[1]}"
-		embed.set_thumbnail(url=f"attachment://{fl_id}.png")
 
-		try:
-			upload_file = discord.File(f'data/img/unit/{fl_id}.png', filename=f'{fl_id}.png')
-		except FileNotFoundError:
-			upload_file = None
+		class FormButton(ui.Button):
+			def __init__(self, f, c, l, *args, **kwargs):
+				super().__init__(*args, **kwargs)
+				self.form, self.cat_, self.level = f, c, l
+			async def callback(self, interaction: discord.Interaction[commands.Bot]):
+				view, upload_file = make_embed(self.cat_.form_to_level(self.form.id_[1], self.level, True)[0], self.cat_, self.level, talents, levels)
+				await interaction.response.send_message(view=view.render(), files=[upload_file])  # ty: ignore[no-matching-overload]
+		arow = ui.ActionRow()
+		for f in cat_.forms():
+			if f is not None and f.id_ != form.id_:
+				form_name = ["Base Form", "Evolved Form", "True Form", "Ultra Form"][f.id_[1]]
+				b = FormButton(f, cat_, level, label=form_name, style=ButtonStyle.green)
+				arow.add_item(b)
 
-		await ctx.send(file=upload_file, embed=embed)
+		class CIButton(ui.Button):
+			async def callback(self, interaction: discord.Interaction[commands.Bot]):
+				e, f = CatCog.make_ci_embed(cat_)
+				await interaction.response.send_message(view=e, file=f)
+		arow.add_item(CIButton(label=f"Cat Info Plate", style=ButtonStyle.blurple))
+		view.add_item(arow)
+		await ctx.reply(view=view,file=upload_file, silent=True, allowed_mentions=AllowedMentions.none())  # ty: ignore[no-matching-overload]
 
-		if embed.footer and "summon:" in embed.footer.text:
-			spirit = await embeds.Cat.convert(ctx, ''.join(x for x in embed.footer.text if x.isnumeric()))
-			flags.cat, flags.to_form = spirit, 0
-			await ctx.invoke(self.catstats, flags=flags)
+		# if embed.footer and "summon:" in embed.footer.text:
+		# 	spirit = await embeds.Cat.convert(ctx, ''.join(x for x in embed.footer.text if x.isnumeric()))
+		# 	flags.cat, flags.to_form = spirit, 0
+		# 	await ctx.invoke(self.catstats, flags=flags)
+
+	@staticmethod
+	def make_ci_embed(cat_: Cat) -> tuple[ui.LayoutView, discord.File]:
+		embed = Embed(accent_colour=discord.Colour.green()).add_title(f"{cat_[-1].name}",subtitle=f"[{cat_.id_}]")
+		embed = embeds.Cat.embed_in(cat_, embed)
+
+		fl_id = f"{cat_.id_:03}_{cat_[-1].id_[1]}"
+		upload_file = discord.File(f'data/img/unit/{fl_id}.png', filename=f'{fl_id}.png')
+		embed.add_thumbnail(upload_file)
+		return embed.render(), upload_file
+
 
 	@commands.command(
 		aliases=['ci'],
@@ -120,17 +176,8 @@ class CatCog(commands.Cog):
 	)
 	async def catinfo(self, ctx: discord.ext.commands.Context, *, flags: CIFlags):
 		cat_, form_id, confidence = get_cat(flags.form_name)
-
-		embed = discord.Embed(colour=discord.Colour.green(), title=f"{cat_[-1].name} [{cat_.id_}]")
-		embed = embeds.Cat.embed_in(cat_, embed)
-
-		fl_id = f"{cat_.id_:03}_{cat_[-1].id_[1]}"
-		embed.set_thumbnail(url=f"attachment://{fl_id}.png")
-		try:
-			upload_file = discord.File(f'data/img/unit/{fl_id}.png', filename=f'{fl_id}.png')
-			await ctx.send(file=upload_file, embed=embed)
-		except FileNotFoundError:
-			await ctx.send(embed=embed)
+		e, f = self.make_ci_embed(cat_)
+		await ctx.send(file=f, view=e)
 
 	@commands.command(
 		aliases=['comboname', 'cc'],

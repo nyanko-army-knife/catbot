@@ -18,6 +18,7 @@ class Gacha:
 			for group in itertools.groupby(units, attrgetter("rarity")):
 				txt, rarity = [], Rarity.NORMAL
 				for unit in group[1]:
+					if unit.form_base is None: continue
 					rarity = unit.rarity
 					mult = int(self.units[unit.id_ - 1])
 					txt += [f"{unit.form_base.name}" + (f"X {mult}" if mult > 1 else "")]
@@ -27,7 +28,7 @@ class Gacha:
 						 for orb_id, mult in self.blue_orbs.items())
 			embed.add_field(name="orbs", value=", ".join(txt), inline=False)
 		if self.items:
-			txt = (f"{idx.items.get(int(item)).name}" + (f"X {mult}" if int(mult) > 1 else "")
+			txt = (f"{idx.items[int(item)].name}" + (f"X {mult}" if int(mult) > 1 else "")
 						 for item, mult in self.items.items())
 			embed.add_field(name="items", value=", ".join(txt), inline=False)
 		return embed

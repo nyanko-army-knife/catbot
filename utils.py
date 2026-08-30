@@ -1,3 +1,4 @@
+from discord import ui
 import argparse
 import datetime
 import json
@@ -6,7 +7,7 @@ import typing
 from dataclasses import dataclass
 from functools import cache
 from string.templatelib import Template
-from typing import Iterable, Self, Any
+from typing import Iterable, Self, Any, Optional
 
 import discord
 from discord.ext import commands
@@ -56,13 +57,43 @@ def render(v: Template) -> str:
 	return out
 
 
-class Embed(discord.Embed):
-	def add_field(self, *, name: Any, value: Any, inline: bool = True) -> Self:
+class Embed(ui.Container):
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.footer: Optional[ui.Item] = None
+		self.thumbnail: Optional[ui.Thumbnail] = None
+		self.fields: list[ui.Item] = []
+
+	def add_title(self, title: str, subtitle: str) -> Self:
+		self.fields.insert(0, ui.TextDisplay(f"## {subtitle}"))
+		self.fields.insert(0, ui.TextDisplay(f"## {title}"))
+		return self
+
+	def add_thumbnail(self, file: discord.File) -> Self:
+		self.thumbnail = ui.Thumbnail(media=file)
+		return self
+
+	def set_footer(self, content: str) -> Self:
+		self.footer = ui.TextDisplay(f"-# {content}")
+		return self
+
+	def add_field(self, value: Any) -> Self:
 		out = str(value)
 		if isinstance(value, Template):
 			out = render(value)
 
-		super().add_field(name=name, value=out, inline=inline)
+		self.fields.append(ui.TextDisplay(f"{out}"))
+		return self
+
+	def render(self) -> ui.LayoutView:
+		if self.thumbnail is not None:
+			self.add_item(ui.Section(*self.fields[0:3], accessory=self.thumbnail))
+			self.fields = self.fields[3:]
+		for field in self.fields:
+			self.add_item(field)
+		if self.footer is not None:
+			self.add_item(self.footer)
+		return ui.LayoutView().add_item(self)
 
 
 @dataclass
@@ -120,7 +151,8 @@ class ArgparseConverter(commands.FlagConverter):
 	@classmethod
 	async def convert(cls, ctx: Context, argument: str) -> Self:
 		parser = cls.parser_init()
-		split_args = shlex.split(argument)
+		# clear single quotes for names like d'arkt which cause issues here
+		split_args = shlex.split(argument.replace("'", ""))
 
 		toret = cls()
 		try:

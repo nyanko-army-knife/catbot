@@ -31,16 +31,16 @@ class EnemyCog(commands.Cog):
 		enem = flags.enemy
 		enem = enem.to_mag(*flags.mag[:2])
 
-		embed = Embed(colour=discord.Colour.red(), title=f"{enem.name} [{enem.id_}] {flags.mag}%")
+		embed = Embed(accent_colour=discord.Colour.red()).add_title(f"{enem.name} [{enem.id_}]", subtitle=f"{flags.mag}%")
 		embeds.Enemy.embed_in(enem, embed)
 
-		fl_id = f'{enem.id_:03}'
 		try:
+			fl_id = f'{enem.id_:03}'
 			upload_file = discord.File(f'data/img/enemy/{fl_id}.png', filename=f'{fl_id}.png')
-			embed.set_thumbnail(url=f"attachment://{fl_id}.png")
-			await ctx.send(file=upload_file, embed=embed)
+			embed.add_thumbnail(upload_file)
+			await ctx.send(file=upload_file, view=embed.render())
 		except:
-			await ctx.send(embed=embed)
+			await ctx.send(view=embed.render())
 
 	@commands.command(
 		aliases=['efind', 'ef'],

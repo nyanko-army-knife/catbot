@@ -1,3 +1,4 @@
+from catbot.utils import Embed
 from functools import reduce
 from operator import add
 
@@ -9,7 +10,7 @@ from commons import models
 
 class Passives:
 	@staticmethod
-	def embed_in(self: models.Passives, embed: discord.Embed) -> discord.Embed:
+	def embed_in(self: models.Passives, embed: Embed) -> Embed:
 		v = t""
 		if self.immunities:
 			v += t"— immune to {', '.join(x.to for x in self.immunities)} \n"
@@ -20,9 +21,9 @@ class Passives:
 		if self.offensives:
 			v += reduce(add, (t"— {x}\n" for x in self.offensives))
 		if v.interpolations:
-			embed.add_field(name='Passives', value=v, inline=False)
+			embed.add_field(value=t"**Passives:**\n{v}")
 
 		for offensive in self.offensives:
 			if isinstance(offensive, abilities.Conjure):
-				embed.set_footer(text=f"this unit has a summon: {offensive.spirit_id}")
+				embed.set_footer(content=f"this unit has a summon: {offensive.spirit_id}")
 		return embed
