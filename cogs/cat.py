@@ -131,7 +131,7 @@ class CatCog(commands.Cog):
 			view.add_item(ui.ActionRow(Dropdown()))
 
 
-		class FormButton(ui.Button):
+		class FormButton(utils.InteractionAuthMixin, ui.Button):
 			def __init__(self, f, c, l, *args, **kwargs):
 				super().__init__(*args, **kwargs)
 				self.form, self.cat_, self.level = f, c, l
@@ -145,7 +145,7 @@ class CatCog(commands.Cog):
 				b = FormButton(f, cat_, level, label=form_name, style=ButtonStyle.green)
 				arow.add_item(b)
 
-		class CIButton(ui.Button):
+		class CIButton(utils.InteractionAuthMixin, ui.Button):
 			async def callback(self, interaction: discord.Interaction[commands.Bot]):
 				e, f = CatCog.make_ci_embed(cat_)
 				await interaction.response.send_message(view=e, file=f)

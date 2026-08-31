@@ -168,3 +168,17 @@ class ArgparseConverter(commands.FlagConverter):
 			return toret
 		except argparse.ArgumentError as e:
 			raise commands.BadArgument(f"**Invalid arguments:**\n> {e.message}\n\n")
+
+class InteractionAuthMixin():
+	async def interaction_check(self, interaction: discord.Interaction[commands.Bot]) -> bool:
+		if isinstance(interaction.user, discord.User): return False
+		if not isinstance(interaction.channel, discord.TextChannel): return False
+
+		role_ids = set(role.id for role in interaction.user.roles)
+		user_id = interaction.user.id
+		channel_id = interaction.channel.id
+
+		guild_perms = permissions.get(str(interaction.channel.guild.id))
+		if not guild_perms: return True
+		return bool(set(guild_perms["roles"]) & role_ids) or (user_id in guild_perms["users"]) or (
+						channel_id in guild_perms["channels"])
