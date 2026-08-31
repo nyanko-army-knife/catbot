@@ -119,7 +119,7 @@ class CatCog(commands.Cog):
 			(_quick, options) = idx.forms.lookup_debug(flags.form_name)
 			form_names = set(idx.forms.lookup_dict[key.name].name for key in options)
 			form_names = [n for n in form_names if n != form.name]
-			class Dropdown(discord.ui.Select):
+			class Dropdown(utils.InteractionAuthMixin, discord.ui.Select):
 				def __init__(self):
 					options=[discord.SelectOption(label=o) for o in form_names]
 					super().__init__(placeholder='wanted something else?', min_values=1, max_values=1, options=options)
@@ -127,7 +127,7 @@ class CatCog(commands.Cog):
 					cat_, form_id, _confidence = get_cat(self.values[0])
 					embed, upload_file = make_embed(cat_.forms()[form_id], cat_, level, [], [])
 					view = embed.render()
-					await interaction.response.send_message(view=view, files=[upload_file])  # ty: ignore[no-matching-overload]
+					await interaction.response.edit_message(view=view, attachments=[upload_file])  # ty: ignore[no-matching-overload]
 			view.add_item(ui.ActionRow(Dropdown()))
 
 
@@ -137,7 +137,7 @@ class CatCog(commands.Cog):
 				self.form, self.cat_, self.level = f, c, l
 			async def callback(self, interaction: discord.Interaction[commands.Bot]):
 				view, upload_file = make_embed(self.cat_.form_to_level(self.form.id_[1], self.level, True)[0], self.cat_, self.level, talents, levels)
-				await interaction.response.send_message(view=view.render(), files=[upload_file])  # ty: ignore[no-matching-overload]
+				await interaction.response.edit_message(view=view.render(), attachments=[upload_file])  # ty: ignore[no-matching-overload]
 		arow = ui.ActionRow()
 		for f in cat_.forms():
 			if f is not None and f.id_ != form.id_:
@@ -148,7 +148,7 @@ class CatCog(commands.Cog):
 		class CIButton(utils.InteractionAuthMixin, ui.Button):
 			async def callback(self, interaction: discord.Interaction[commands.Bot]):
 				e, f = CatCog.make_ci_embed(cat_)
-				await interaction.response.send_message(view=e, file=f)
+				await interaction.response.edit_message(view=e, attachments=[f])
 		arow.add_item(CIButton(label=f"Cat Info Plate", style=ButtonStyle.blurple))
 		view.add_item(arow)
 		await ctx.reply(view=view,file=upload_file, silent=True, allowed_mentions=AllowedMentions.none())  # ty: ignore[no-matching-overload]
