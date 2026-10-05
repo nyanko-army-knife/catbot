@@ -12,7 +12,11 @@ class Form(models.Form):
 		trait_emojis = [emoji_by_name(f'trait_{trait.name.lower()}') for trait in self.traits]
 		ptrait_emojis = [emoji_by_name(f'ptrait_{ptrait.name.lower()}') for ptrait in self.pseudotraits]
 		mult_emojis = [emoji_by_name(f'mult_{mult}') for mult in self.mults]
-		embed.add_field( value=t'[**Cost:** {self.cost:,}]  [**Cooldown:** {max(self.cooldown, Duration(60)):,}]',
+
+		cd = t'{max(self.cooldown, Duration(60)):,}'
+		if self.alternate_cooldown: cd += t'/{self.cooldown * self.alternate_cooldown // 100}'
+
+		embed.add_field( value=t'[**Cost:** {self.cost:,}]  [**Cooldown:** {cd}]',
 										)
 		Entity.embed_in(self, embed)
 		if trait_emojis or ptrait_emojis:
