@@ -1,3 +1,4 @@
+import dotenv
 import os
 
 import discord
@@ -36,6 +37,7 @@ async def on_ready():
 
 
 if __name__ == "__main__":
+	dotenv.load_dotenv("catbot/.env")
 	idx.setup()
 	utils.setup_perms()
 	utils.setup_icons()

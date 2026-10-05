@@ -16,12 +16,12 @@ class Gacha:
 		if self.units:
 			units = sorted((idx.units.get(int(unit) + 1) for unit in self.units), key=attrgetter("rarity"), reverse=True)
 			for group in itertools.groupby(units, attrgetter("rarity")):
-				txt, rarity = [], Rarity.NORMAL
+				txt, rarity = [], Rarity.Normal
 				for unit in group[1]:
-					if unit.form_base is None: continue
+					if unit.base_form is None: continue
 					rarity = unit.rarity
 					mult = int(self.units[unit.id_ - 1])
-					txt += [f"{unit.form_base.name}" + (f"X {mult}" if mult > 1 else "")]
+					txt += [f"{unit.base_form.name}" + (f"X {mult}" if mult > 1 else "")]
 				embed.add_field(name=f"units - {rarity}", value=(", ".join(txt))[:1024], inline=False)
 		if self.blue_orbs:
 			txt = (f"{orb_id}" + (f"X {mult}" if int(mult) > 1 else "")

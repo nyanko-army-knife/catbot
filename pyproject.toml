@@ -16,3 +16,8 @@ dependencies = [
 [tool.uv.sources]
 commons = { git = "https://github.com/nyanko-army-knife/commons" }
 
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+

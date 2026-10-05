@@ -13,17 +13,17 @@ class Passives:
 	def embed_in(self: models.Passives, embed: Embed) -> Embed:
 		v = t""
 		if self.immunities:
-			v += t"— immune to {', '.join(x.to for x in self.immunities)} \n"
-		if self.resists:
-			v += t"— resists to {', '.join(f"{y.to} [{y.amt}%]" for y in self.resists)} \n"
-		if self.defensives:
-			v += reduce(add, (t"— {x}\n" for x in self.defensives))
-		if self.offensives:
-			v += reduce(add, (t"— {x}\n" for x in self.offensives))
+			v += t"— immune to {', '.join(str(x) for x in self.immunities)} \n"
+		if self.resistances:
+			v += t"— resists {', '.join(f"{y.to} [{y.by}%]" for y in self.resistances)} \n"
+		if self.defensives.items:
+			v += reduce(add, (t"— {x}\n" for x in self.defensives.items))
+		if self.offensives.items:
+			v += reduce(add, (t"— {x}\n" for x in self.offensives.items))
 		if v.interpolations:
 			embed.add_field(value=t"**Passives:**\n{v}")
 
-		for offensive in self.offensives:
+		for offensive in self.offensives.items:
 			if isinstance(offensive, abilities.Conjure):
 				embed.set_footer(content=f"this unit has a summon: {offensive.spirit_id}")
 		return embed

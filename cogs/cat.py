@@ -25,7 +25,9 @@ def get_cat(form_name: str) -> tuple[Cat, int, float]:
 		if match_score > 80:
 			form_id = form.id_[1]
 
-	return idx.units.get(cat_id), form_id, match_score
+	cat = idx.units.get(cat_id)
+	assert cat is not None
+	return cat, form_id, match_score
 
 
 class CSFlags(utils.ArgparseConverter):
@@ -107,7 +109,7 @@ class CatCog(commands.Cog):
 			form, level = cat_.form_to_level(form_id, flags.level)
 
 		if flags.talents:
-			talents: list[Talent] = idx.talents[cat_.id_]
+			talents: list[Talent] = idx.talents[cat_.id_].talents
 			levels = [10] * 10 if flags.talents == [-1] else flags.talents + [0] * 10
 
 		# MAKE EMBED
@@ -127,7 +129,7 @@ class CatCog(commands.Cog):
 					cat_, form_id, _confidence = get_cat(self.values[0])
 					embed, upload_file = make_embed(cat_.forms()[form_id], cat_, level, [], [])
 					view = embed.render()
-					await interaction.response.edit_message(view=view, attachments=[upload_file])  # ty: ignore[no-matching-overload]
+					await interaction.response.edit_message(view=view, attachments=[upload_file])
 			view.add_item(ui.ActionRow(Dropdown()))
 
 
@@ -137,7 +139,7 @@ class CatCog(commands.Cog):
 				self.form, self.cat_, self.level = f, c, l
 			async def callback(self, interaction: discord.Interaction[commands.Bot]):
 				view, upload_file = make_embed(self.cat_.form_to_level(self.form.id_[1], self.level, True)[0], self.cat_, self.level, talents, levels)
-				await interaction.response.edit_message(view=view.render(), attachments=[upload_file])  # ty: ignore[no-matching-overload]
+				await interaction.response.edit_message(view=view.render(), attachments=[upload_file])
 		arow = ui.ActionRow()
 		for f in cat_.forms():
 			if f is not None and f.id_ != form.id_:
@@ -205,7 +207,7 @@ class CatCog(commands.Cog):
 
 		embed = discord.Embed(colour=discord.Colour.greyple(),
 													title=f"Talents of {form.name} [{form.id_[0]}-{form.id_[1]}]")
-		embeds.Talents.embed_in(idx.talents[form.id_[0]], embed)
+		embeds.Talents.embed_in(idx.talents[form.id_[0]].talents, embed)
 
 		await ctx.send(embed=embed)
 

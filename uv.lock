@@ -165,12 +165,20 @@ dependencies = [
     { name = "typing-extensions" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "commons", git = "https://github.com/nyanko-army-knife/commons" },
     { name = "discord", specifier = ">=2.3.2" },
     { name = "typing-extensions", specifier = ">=4.15.0" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.1.1" }]
 
 [[package]]
 name = "colorama"

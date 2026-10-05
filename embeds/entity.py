@@ -1,9 +1,7 @@
-from catbot.utils import Embed
 from functools import reduce
 from operator import add
 
-import discord
-
+from catbot.utils import Embed
 from commons import models
 from .abilities import Passives
 
@@ -11,30 +9,34 @@ from .abilities import Passives
 class Entity:
 	@staticmethod
 	def embed_in(self: models.Entity, embed: Embed) -> Embed:
-		embed.add_field(value=t"[**HP**: {self.hp:,d}]  [**KB Count:** {self.kb:,d}]  [**Atk**: {self.atk:,d}]  [**DPS:** {self.dps:,.2f}]")
+		embed.add_field(
+			value=t"[**HP:** {self.health:,d}]  [**KB Count:** {self.knockbacks:,d}]  [**Atk:** {self.damage:,d}]  [**DPS:** {self.dps:,.2f}]")
 
 		if self.breakup.hit_1 is not None:
-			embed.add_field(value=t"**Timings**:\n{self.breakup}")
+			embed.add_field(value=t"**Timings:**\n{self.breakup}")
 		else:
-			embed.add_field(value=t'[**Timings**: ↑{self.breakup.hit_0.foreswing} / ↓{self.breakup.backswing} / ⏲{self.breakup.tba}]')
+			embed.add_field(
+				value=t'[**Timings**: ↑{self.breakup.hit_0.foreswing} / ↓{self.breakup.backswing} / ⏲{self.breakup.tba}]')
 
-		display_range = t'{self.range_}'
-		basehit = self.breakup.hit_0
-		if not basehit.separate_range and basehit.range_width != 0:  # true if any hits have separate range
-			if basehit.range_width > 0:
-				display_range += t' [{basehit.range_start}~{basehit.range_start + basehit.range_width}]'
+		display_range = t'{self.standing_range}'
+		# show only standing range for multi-range-hitters, and non-LD units.
+		if self.breakup.hit_0.separate_range and not (self.breakup.hit_1 and self.breakup.hit_1.separate_range):
+			range_start, range_width = self.breakup.hit_0.separate_range
+			if range_width > 0:
+				display_range += t' [{range_start}~{range_start + range_width}]'
 			else:
-				display_range += t' [{basehit.range_start + basehit.range_width}~{basehit.range_start}]'
+				display_range += t' [{range_start + range_width}~{range_start}]'
 
-		embed.add_field(value=t'[**Range:** {display_range}]  [**Area?:** {self.area_attack}]  [**Speed:** {self.speed}]')
+		embed.add_field(
+			value=t'[**Range:** {display_range}]  [**Area?:** {self.area_targeting}]  [**Speed:** {self.speed // 2}]')
 
 		additions = t""
-		if self.extensions:
-			additions += reduce(add, [t"— {x}\n" for x in self.extensions])
-		if self.abilities:
-			additions += reduce(add, [t"— {x}\n" for x in self.abilities])
+		if self.extensions.items:
+			additions += reduce(add, [t"— {x}\n" for x in self.extensions.items])
+		if self.actives.items:
+			additions += reduce(add, [t"— {x}\n" for x in self.actives.items])
 		if additions.interpolations:
-			embed.add_field(value=t"**Abilities**:\n{additions}")
+			embed.add_field(value=t"**Abilities:**\n{additions}")
 		if self.passives:
 			Passives.embed_in(self.passives, embed)
 		return embed

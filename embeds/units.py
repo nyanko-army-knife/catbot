@@ -7,11 +7,10 @@ from .. import utils as utils_
 from ..utils import emoji_by_name, Embed
 
 
-class Form:
-	@staticmethod
+class Form(models.Form):
 	def embed_in(self: models.Form, embed: Embed) -> Embed:
-		trait_emojis = [emoji_by_name(f'trait_{trait}') for trait in self.traits]
-		ptrait_emojis = [emoji_by_name(f'ptrait_{ptrait.name}') for ptrait in self.ptraits]
+		trait_emojis = [emoji_by_name(f'trait_{trait.name.lower()}') for trait in self.traits]
+		ptrait_emojis = [emoji_by_name(f'ptrait_{ptrait.name.lower()}') for ptrait in self.pseudotraits]
 		mult_emojis = [emoji_by_name(f'mult_{mult}') for mult in self.mults]
 		embed.add_field( value=t'[**Cost:** {self.cost:,}]  [**Cooldown:** {max(self.cooldown, Duration(60)):,}]',
 										)
@@ -23,16 +22,15 @@ class Form:
 		return embed
 
 
-class Cat:
+class Cat(models.Cat):
 	@classmethod
-	async def convert(cls, ctx: commands.Context, argument: str) -> Cat:
+	async def convert(cls, _ctx: commands.Context, argument: str) -> models.Cat:
 		return idx.units.get(int(argument))
 
-	@staticmethod
 	def embed_in(self: models.Cat, embed: Embed) -> Embed:
 		embed.add_field(value=f"[**Rarity:** {Rarity(self.rarity).label}]  [**Unlock Method:** {UnlockMethod(self.unlock_method).label}]")
 
-		max_level_base, max_level_catseyes, max_boost = self.max_level
+		max_level_base, max_level_catseyes, max_boost = self.max_levels
 		embed.add_field(value=f"[**Max Level**: {max_level_base}(->{max_level_catseyes}) + {max_boost}]")
 
 		if self.tf_level > 0:
