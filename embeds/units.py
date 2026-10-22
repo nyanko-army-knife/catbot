@@ -29,7 +29,9 @@ class Form(models.Form):
 class Cat(models.Cat):
 	@classmethod
 	async def convert(cls, _ctx: commands.Context, argument: str) -> models.Cat:
-		return idx.units.get(int(argument))
+		t = idx.units.get(int(argument))
+		assert t is not None
+		return t
 
 	def embed_in(self: models.Cat, embed: Embed) -> Embed:
 		embed.add_field(value=f"[**Rarity:** {Rarity(self.rarity).label}]  [**Unlock Method:** {UnlockMethod(self.unlock_method).label}]")

@@ -32,19 +32,10 @@ def get_cat(form_name: str) -> tuple[Cat, int, float]:
 
 class CSFlags(utils.ArgparseConverter):
 	form_name: str = commands.flag(name='name', positional=True, description="unit name", default="")
-
-	cat: embeds.Cat = commands.flag(name='id', default=None,
-																	description="ID of unit, unit name is ignored when this is provided")
-
-	level: utils.ForceInt = commands.flag(name='level', aliases=['lvl', 'lv', 'l'], default=50, max_args=1,
-																				description="unit level")
-
-	to_form: int = commands.flag(name='form', aliases=['f'], default=-1, max_args=1,
-															 description="Unit Form (0 = first, 1 = evolved, 2 = true, 3 = ultra)")
-
-	talents: list[int] = commands.flag(name='talents', aliases=['t'], default=DoubleDefault([], [-1]),
-																		 description="Talents, send -1 to max all")
-
+	cat: embeds.Cat = commands.flag(name='id', default=None, description="ID of unit, unit name is ignored when this is provided")
+	level: utils.ForceInt = commands.flag(name='level', aliases=['lvl', 'lv', 'l'], default=50, max_args=1, description="unit level")
+	to_form: int = commands.flag(name='form', aliases=['f'], default=-1, max_args=1, description="Unit Form (0 = first, 1 = evolved, 2 = true, 3 = ultra)")
+	talents: list[int] = commands.flag(name='talents', aliases=['t'], default=DoubleDefault([], [-1]), description="Talents, send -1 to max all")
 	verbose: bool = commands.flag(name='verbose', aliases=['v'], default=False, description="verbose (display summon)")
 
 
@@ -66,15 +57,14 @@ def make_embed(form: Form, cat_: Cat, level: int, talents: list[Talent], levels:
 		embed.set_footer(content=f + ', '.join(tlnts))
 
 	embeds.Form.embed_in(form, embed)
-
-	fl_id = f"{form.id_[0]:03}_{form.id_[1]}"
-
+	fl_id = f"uni{form.id_[0]-1:03}_{"fcsu"[form.id_[1]]}00"
 	try:
-		upload_file = discord.File(f'data/img/unit/{fl_id}.png', filename=f'{fl_id}.png')
+		upload_file = discord.File(f'data/img/Unit/{fl_id}.png', filename=f'{fl_id}.png')
 		embed.add_thumbnail(upload_file)
 	except FileNotFoundError:
 		upload_file = None
 	return (embed, upload_file)
+
 
 class CatCog(commands.Cog):
 	qualified_name = "cats"
@@ -127,8 +117,9 @@ class CatCog(commands.Cog):
 					super().__init__(placeholder='wanted something else?', min_values=1, max_values=1, options=options)
 				async def callback(self, interaction: discord.Interaction[commands.Bot]):
 					cat_, form_id, _confidence = get_cat(self.values[0])
-					embed, upload_file = make_embed(cat_.forms()[form_id], cat_, level, [], [])
+					embed, upload_file = make_embed(cat_.forms[form_id], cat_, level, [], [])
 					view = embed.render()
+					assert upload_file is not None
 					await interaction.response.edit_message(view=view, attachments=[upload_file])
 			view.add_item(ui.ActionRow(Dropdown()))
 
@@ -139,13 +130,20 @@ class CatCog(commands.Cog):
 				self.form, self.cat_, self.level = f, c, l
 			async def callback(self, interaction: discord.Interaction[commands.Bot]):
 				view, upload_file = make_embed(self.cat_.form_to_level(self.form.id_[1], self.level, True)[0], self.cat_, self.level, talents, levels)
+				assert upload_file is not None
 				await interaction.response.edit_message(view=view.render(), attachments=[upload_file])
+
 		arow = ui.ActionRow()
-		for f in cat_.forms():
+		for f in cat_.forms:
 			if f is not None and f.id_ != form.id_:
 				form_name = ["Base Form", "Evolved Form", "True Form", "Ultra Form"][f.id_[1]]
 				b = FormButton(f, cat_, level, label=form_name, style=ButtonStyle.green)
 				arow.add_item(b)
+		if (c := form.passives.offensives.conjure) is not None:
+			s = idx.units.get(c.spirit_id)
+			assert s is not None
+			b = FormButton(s.forms[0], s, level, label="Summon", style=ButtonStyle.red)
+			arow.add_item(b)
 
 		class CIButton(utils.InteractionAuthMixin, ui.Button):
 			async def callback(self, interaction: discord.Interaction[commands.Bot]):
@@ -159,6 +157,7 @@ class CatCog(commands.Cog):
 		# 	spirit = await embeds.Cat.convert(ctx, ''.join(x for x in embed.footer.text if x.isnumeric()))
 		# 	flags.cat, flags.to_form = spirit, 0
 		# 	await ctx.invoke(self.catstats, flags=flags)
+
 
 	@staticmethod
 	def make_ci_embed(cat_: Cat) -> tuple[ui.LayoutView, discord.File]:
@@ -181,6 +180,7 @@ class CatCog(commands.Cog):
 		e, f = self.make_ci_embed(cat_)
 		await ctx.send(file=f, view=e)
 
+
 	@commands.command(
 		aliases=['comboname', 'cc'],
 		description="display effect and units of combo",
@@ -195,6 +195,7 @@ class CatCog(commands.Cog):
 		embed.add_field(name="Cats", value=", ".join(idx.units[c][f].name for c, f in cmb.cats), inline=False)
 		await ctx.send(embed=embed)
 
+
 	@commands.command(
 		aliases=['talentsof', 'to'],
 		description="list talents of cat",
@@ -205,11 +206,11 @@ class CatCog(commands.Cog):
 		target = " ".join(args)
 		form = idx.forms.lookup(target)
 
-		embed = discord.Embed(colour=discord.Colour.greyple(),
-													title=f"Talents of {form.name} [{form.id_[0]}-{form.id_[1]}]")
+		embed = discord.Embed(colour=discord.Colour.greyple(), title=f"Talents of {form.name} [{form.id_[0]}-{form.id_[1]}]")
 		embeds.Talents.embed_in(idx.talents[form.id_[0]].talents, embed)
 
 		await ctx.send(embed=embed)
+
 
 	@commands.command(
 		aliases=['cfind', 'cf'],

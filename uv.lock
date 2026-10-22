@@ -217,11 +217,12 @@ wheels = [
 
 [[package]]
 name = "catbot"
-version = "0.1.0"
+version = "0.1.1"
 source = { virtual = "." }
 dependencies = [
     { name = "commons" },
     { name = "discord" },
+    { name = "pyserde" },
     { name = "typing-extensions" },
 ]
 
@@ -234,6 +235,7 @@ dev = [
 requires-dist = [
     { name = "commons", git = "https://github.com/nyanko-army-knife/commons" },
     { name = "discord", specifier = ">=2.3.2" },
+    { name = "pyserde", specifier = ">=0.33.1" },
     { name = "typing-extensions", specifier = ">=4.15.0" },
 ]
 
