@@ -164,8 +164,8 @@ class CatCog(commands.Cog):
 		embed = Embed(accent_colour=discord.Colour.green()).add_title(f"{cat_[-1].name}",subtitle=f"[{cat_.id_}]")
 		embed = embeds.Cat.embed_in(cat_, embed)
 
-		fl_id = f"{cat_.id_:03}_{cat_[-1].id_[1]}"
-		upload_file = discord.File(f'data/img/unit/{fl_id}.png', filename=f'{fl_id}.png')
+		fl_id = f"uni{cat_.id_-1:03}_{"fcsu"[len(cat_.forms)-1]}00"
+		upload_file = discord.File(f'data/img/Unit/{fl_id}.png', filename=f'{fl_id}.png')
 		embed.add_thumbnail(upload_file)
 		return embed.render(), upload_file
 

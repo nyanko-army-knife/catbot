@@ -39,26 +39,26 @@ class Cat(models.Cat):
 		max_level_base, max_level_catseyes, max_boost = self.max_levels
 		embed.add_field(value=f"[**Max Level**: {max_level_base}(->{max_level_catseyes}) + {max_boost}]")
 
-		if self.tf_level > 0:
-			txt = f"level: {self.tf_level}"
-			if self.tf_xp:
-				txt += f" | XP: {self.tf_xp:,}"
-			if self.tf_reqs:
+		if self.true_form_reqs is not None:
+			txt = f"level: {self.true_form_reqs.level}"
+			if self.true_form_reqs.xp:
+				txt += f" | XP: {self.true_form_reqs.xp:,}"
+			if self.true_form_reqs.items:
 				txt += "\n"
 				reqtext = []
-				for req in self.tf_reqs:
+				for req in self.true_form_reqs.items:
 					reqtext += [f"{emoji_by_name(utils_.item_icons[req[0]])}x{req[1]}"]
 				txt += " | ".join(reqtext)
 			embed.add_field(value=f"**True Form**\n{txt}")
 
-		if self.uf_level > 0:
-			txt = f"level: {self.uf_level}"
-			if self.uf_xp:
-				txt += f" | XP: {self.uf_xp:,}"
-			if self.uf_reqs:
+		if self.ultra_form_reqs is not None:
+			txt = f"level: {self.ultra_form_reqs.level}"
+			if self.ultra_form_reqs.xp:
+				txt += f" | XP: {self.ultra_form_reqs.xp:,}"
+			if self.ultra_form_reqs.items:
 				txt += "\n"
 				reqtext = []
-				for req in self.uf_reqs:
+				for req in self.ultra_form_reqs.items:
 					reqtext += [f"{emoji_by_name(utils_.item_icons[req[0]])}x{req[1]}"]
 				txt += " | ".join(reqtext)
 			embed.add_field(value="**Ultra Form**\n"+txt)
