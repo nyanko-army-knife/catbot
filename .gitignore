@@ -241,3 +241,4 @@ fabric.properties
 
 ## CUSTOM
 assets_cache/
+gen_*.py
